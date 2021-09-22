@@ -50,13 +50,13 @@ public abstract class ServerWorldMixin extends World {
 
     private boolean doBlockEvent(){
         BlockEvent blockEvent = this.syncedBlockEventQueue.removeFirst();
-        boolean validBe = getBlockState(blockEvent.getPos()).isOf(blockEvent.getBlock());
+        boolean validBe = getBlockState(blockEvent.getPos()).isOf(blockEvent.getBlock())||SubTickSettings.includeInvalidBlockEvents;
 
         if (this.processBlockEvent(blockEvent)) {
             this.server.getPlayerManager().sendToAround(null, blockEvent.getPos().getX(), blockEvent.getPos().getY(), blockEvent.getPos().getZ(), 64.0D, this.getRegistryKey(), new BlockEventS2CPacket(blockEvent.getPos(), blockEvent.getBlock(), blockEvent.getType(), blockEvent.getData()));
         }
         BlockPos pos = blockEvent.getPos();
-        if((validBe||SubTickSettings.includeInvalidBlockEvents)&&SubTickSettings.highlightBlockEvents) {
+        if(validBe&&SubTickSettings.highlightBlockEvents) {
             Variables.addHighlight(pos.getX(), pos.getY(), pos.getZ(), server.getPlayerManager().getPlayerList(), toServerWorld());
         }
         return validBe&&Variables.horizontalDistance(Variables.commandSrcPos, blockEvent.getPos())<SubTickSettings.beRadius;
