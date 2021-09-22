@@ -15,7 +15,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "subtick.Subtick"
+      "subtick.SubTick"
     ]
   },
   "mixins": [
