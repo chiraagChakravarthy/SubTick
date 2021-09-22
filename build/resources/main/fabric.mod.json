@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "subtick",
+  "version": "1.0-SNAPSHOT",
+  "name": "Subtick",
+  "description": "Za warudo.",
+  "authors": [
+    "Punchster2",
+    "prgmTrouble"
+  ],
+  "contact": {
+    "repo": "SubTick"
+  },
+  "license": "MIT",
+  "icon": "assets/subtick/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.punchster2.subtick.subtick.client.SubtickClient"
+    ],
+    "main": [
+      "com.punchster2.subtick.subtick.Subtick"
+    ]
+  },
+  "mixins": [
+    "subtick.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.11.7",
+    "fabric": "*",
+    "minecraft": "1.17.1"
+  }
+}

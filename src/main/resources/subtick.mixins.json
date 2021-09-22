@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "subtick.mixins",
+  "compatibilityLevel": "JAVA_16",
+  "mixins": [
+    "ServerWorldMixin",
+    "ServerPlayerInteractionManagerMixin",
+    "MinecraftServerMixin",
+    "DataBuilderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

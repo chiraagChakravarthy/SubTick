@@ -1,0 +1,157 @@
+---- Minecraft Crash Report ----
+// Surprise! Haha. Well, this is awkward.
+
+Time: 9/21/21, 11:43 PM
+Description: Initializing game
+
+java.lang.RuntimeException: Could not execute entrypoint stage 'main' due to errors, provided by 'subtick'!
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils.invoke0(EntrypointUtils.java:50)
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils.invoke(EntrypointUtils.java:33)
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointClient.start(EntrypointClient.java:33)
+	at net.minecraft.client.MinecraftClient.<init>(MinecraftClient.java:457)
+	at net.minecraft.client.main.Main.main(Main.java:179)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:567)
+	at net.fabricmc.loader.game.MinecraftGameProvider.launch(MinecraftGameProvider.java:234)
+	at net.fabricmc.loader.launch.knot.Knot.launch(Knot.java:153)
+	at net.fabricmc.loader.launch.knot.KnotClient.main(KnotClient.java:28)
+	at net.fabricmc.devlaunchinjector.Main.main(Main.java:86)
+Caused by: net.fabricmc.loader.api.EntrypointException: Exception while loading entries for entrypoint 'main' provided by 'subtick'
+	at net.fabricmc.loader.EntrypointStorage.lambda$getEntrypointContainers$1(EntrypointStorage.java:193)
+	at net.fabricmc.loader.entrypoint.EntrypointContainerImpl.getEntrypoint(EntrypointContainerImpl.java:37)
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils.invoke0(EntrypointUtils.java:47)
+	... 12 more
+Caused by: net.fabricmc.loader.api.LanguageAdapterException: Class com.punchster2.subtick.subtick.Subtick cannot be cast to net.fabricmc.api.ModInitializer!
+	at net.fabricmc.loader.util.DefaultLanguageAdapter.create(DefaultLanguageAdapter.java:63)
+	at net.fabricmc.loader.EntrypointStorage$NewEntry.lambda$getOrCreate$0(EntrypointStorage.java:106)
+	at java.base/java.util.HashMap.computeIfAbsent(HashMap.java:1224)
+	at net.fabricmc.loader.EntrypointStorage$NewEntry.getOrCreate(EntrypointStorage.java:104)
+	at net.fabricmc.loader.EntrypointStorage.lambda$getEntrypointContainers$1(EntrypointStorage.java:191)
+	... 14 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils.invoke0(EntrypointUtils.java:50)
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointUtils.invoke(EntrypointUtils.java:33)
+	at net.fabricmc.loader.entrypoint.minecraft.hooks.EntrypointClient.start(EntrypointClient.java:33)
+	at net.minecraft.client.MinecraftClient.<init>(MinecraftClient.java:457)
+
+-- Initialization --
+Details:
+Stacktrace:
+	at net.minecraft.client.main.Main.main(Main.java:179)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:78)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:567)
+	at net.fabricmc.loader.game.MinecraftGameProvider.launch(MinecraftGameProvider.java:234)
+	at net.fabricmc.loader.launch.knot.Knot.launch(Knot.java:153)
+	at net.fabricmc.loader.launch.knot.KnotClient.main(KnotClient.java:28)
+	at net.fabricmc.devlaunchinjector.Main.main(Main.java:86)
+
+-- System Details --
+Details:
+	Minecraft Version: 1.17.1
+	Minecraft Version ID: 1.17.1
+	Operating System: Windows 10 (amd64) version 10.0
+	Java Version: 16.0.1, Oracle Corporation
+	Java VM Version: Java HotSpot(TM) 64-Bit Server VM (mixed mode, sharing), Oracle Corporation
+	Memory: 968859944 bytes (923 MiB) / 1591738368 bytes (1518 MiB) up to 4276092928 bytes (4078 MiB)
+	CPUs: 12
+	Processor Vendor: GenuineIntel
+	Processor Name: Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz
+	Identifier: Intel64 Family 6 Model 158 Stepping 10
+	Microarchitecture: unknown
+	Frequency (GHz): 3.70
+	Number of physical packages: 1
+	Number of physical CPUs: 6
+	Number of logical CPUs: 12
+	Graphics card #0 name: NVIDIA GeForce RTX 2080 Ti
+	Graphics card #0 vendor: NVIDIA (0x10de)
+	Graphics card #0 VRAM (MB): 4095.00
+	Graphics card #0 deviceId: 0x1e07
+	Graphics card #0 versionInfo: DriverVersion=27.21.14.5671
+	Graphics card #1 name: NVIDIA GeForce GTX 1060 3GB
+	Graphics card #1 vendor: NVIDIA (0x10de)
+	Graphics card #1 VRAM (MB): 3072.00
+	Graphics card #1 deviceId: 0x1c02
+	Graphics card #1 versionInfo: DriverVersion=27.21.14.5671
+	Memory slot #0 capacity (MB): 8192.00
+	Memory slot #0 clockSpeed (GHz): 2.13
+	Memory slot #0 type: DDR4
+	Memory slot #1 capacity (MB): 8192.00
+	Memory slot #1 clockSpeed (GHz): 2.13
+	Memory slot #1 type: DDR4
+	Virtual memory max (MB): 18740.39
+	Virtual memory used (MB): 16661.77
+	Swap memory total (MB): 2432.00
+	Swap memory used (MB): 57.18
+	JVM Flags: 0 total; 
+	Fabric Mods: 
+		fabric: Fabric API 0.40.1+1.17
+		fabric-api-base: Fabric API Base 0.3.0+a02b446318
+		fabric-api-lookup-api-v1: Fabric API Lookup API (v1) 1.3.0+cbda931818
+		fabric-biome-api-v1: Fabric Biome API (v1) 3.2.0+cbda931818
+		fabric-blockrenderlayer-v1: Fabric BlockRenderLayer Registration (v1) 1.1.5+a02b446318
+		fabric-command-api-v1: Fabric Command API (v1) 1.1.3+5ab9934c18
+		fabric-commands-v0: Fabric Commands (v0) 0.2.2+92519afa18
+		fabric-containers-v0: Fabric Containers (v0) 0.1.12+cbda931818
+		fabric-content-registries-v0: Fabric Content Registries (v0) 0.3.0+cbda931818
+		fabric-crash-report-info-v1: Fabric Crash Report Info (v1) 0.1.5+be9da31018
+		fabric-dimensions-v1: Fabric Dimensions API (v1) 2.0.11+6cefd57718
+		fabric-entity-events-v1: Fabric Entity Events (v1) 1.2.3+87cc6e4c18
+		fabric-events-interaction-v0: Fabric Events Interaction (v0) 0.4.10+fc40aa9d18
+		fabric-events-lifecycle-v0: Fabric Events Lifecycle (v0) 0.2.1+92519afa18
+		fabric-game-rule-api-v1: Fabric Game Rule API (v1) 1.0.7+cbda931818
+		fabric-gametest-api-v1: Fabric Game Test API (v1) 1.0.0+e409d7e818
+		fabric-item-api-v1: Fabric Item API (v1) 1.2.4+cbda931818
+		fabric-item-groups-v0: Fabric Item Groups (v0) 0.2.10+b7ab612118
+		fabric-key-binding-api-v1: Fabric Key Binding API (v1) 1.0.4+cbda931818
+		fabric-keybindings-v0: Fabric Key Bindings (v0) 0.2.2+36b77c3e18
+		fabric-lifecycle-events-v1: Fabric Lifecycle Events (v1) 1.4.4+a02b446318
+		fabric-loot-tables-v1: Fabric Loot Tables (v1) 1.0.4+a02b446318
+		fabric-mining-levels-v0: Fabric Mining Levels (v0) 0.1.3+92519afa18
+		fabric-models-v0: Fabric Models (v0) 0.3.0+a02b446318
+		fabric-networking-api-v1: Fabric Networking API (v1) 1.0.13+cbda931818
+		fabric-networking-blockentity-v0: Fabric Networking Block Entity (v0) 0.2.11+a02b446318
+		fabric-networking-v0: Fabric Networking (v0) 0.3.2+92519afa18
+		fabric-object-builder-api-v1: Fabric Object Builder API (v1) 1.10.9+cbda931818
+		fabric-object-builders-v0: Fabric Object Builders (v0) 0.7.3+a02b446318
+		fabric-particles-v1: Fabric Particles (v1) 0.2.4+a02b446318
+		fabric-registry-sync-v0: Fabric Registry Sync (v0) 0.7.10+e2961fee18
+		fabric-renderer-api-v1: Fabric Renderer API (v1) 0.4.4+cbda931818
+		fabric-renderer-indigo: Fabric Renderer - Indigo 0.4.8+cbda931818
+		fabric-renderer-registries-v1: Fabric Renderer Registries (v1) 3.2.3+4658223018
+		fabric-rendering-data-attachment-v1: Fabric Rendering Data Attachment (v1) 0.1.5+a02b446318
+		fabric-rendering-fluids-v1: Fabric Rendering Fluids (v1) 0.1.14+4658223018
+		fabric-rendering-v0: Fabric Rendering (v0) 1.1.4+4658223018
+		fabric-rendering-v1: Fabric Rendering (v1) 1.8.2+ffb6d41e18
+		fabric-resource-loader-v0: Fabric Resource Loader (v0) 0.4.8+a00e834b18
+		fabric-screen-api-v1: Fabric Screen API (v1) 1.0.4+cbda931818
+		fabric-screen-handler-api-v1: Fabric Screen Handler API (v1) 1.1.8+cbda931818
+		fabric-structure-api-v1: Fabric Structure API (v1) 1.1.13+5ab9934c18
+		fabric-tag-extensions-v0: Fabric Tag Extensions (v0) 1.2.1+b06cb95b18
+		fabric-textures-v0: Fabric Textures (v0) 1.0.6+a02b446318
+		fabric-tool-attribute-api-v1: Fabric Tool Attribute API (v1) 1.2.12+b7ab612118
+		fabric-transfer-api-v1: Fabric Transfer API (v1) 1.3.1+4658223018
+		fabricloader: Fabric Loader 0.11.7
+		java: Java HotSpot(TM) 64-Bit Server VM 16
+		minecraft: Minecraft 1.17.1
+		subtick: Subtick 1.0-SNAPSHOT
+	Launched Version: Fabric
+	Backend library: LWJGL version 3.2.2 build 10
+	Backend API: NO CONTEXT
+	Window size: <not initialized>
+	GL Caps: Using framebuffer using OpenGL 3.2
+	GL debug messages: <disabled>
+	Using VBOs: Yes
+	Is Modded: Definitely; Client brand changed to 'fabric'
+	Type: Client (map_client.txt)
+	CPU: <unknown>
