@@ -11,4 +11,7 @@ public class SubTickSettings {
 
     @Rule(desc = "show where block events occur", category = "SUBTICK")
     public static boolean highlightBlockEvents = true;
+
+    @Rule(desc = "maximum horizontal distance from the player block events will be stepped through", category = "SUBTICK")
+    public static int beRadius = 200;
 }

@@ -1,26 +1,16 @@
 package subtick.mixins;
 
 import carpet.helpers.TickSpeed;
-import carpet.network.ServerNetworkHandler;
-import carpet.patches.NetworkManagerFake;
 import carpet.utils.Messenger;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.FallingBlock;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.Packet;
-import net.minecraft.network.packet.s2c.play.*;
+import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
@@ -50,8 +40,6 @@ public abstract class ServerWorldMixin extends World {
 
     @Shadow public abstract List<ServerPlayerEntity> getPlayers();
 
-    @Shadow protected abstract boolean addEntity(Entity entity);
-
     @Shadow public abstract ServerWorld toServerWorld();
 
     private static int prevSize;
@@ -62,15 +50,16 @@ public abstract class ServerWorldMixin extends World {
 
     private boolean doBlockEvent(){
         BlockEvent blockEvent = this.syncedBlockEventQueue.removeFirst();
-        boolean out = getBlockState(blockEvent.getPos()).isOf(blockEvent.getBlock());
+        boolean validBe = getBlockState(blockEvent.getPos()).isOf(blockEvent.getBlock());
+
         if (this.processBlockEvent(blockEvent)) {
             this.server.getPlayerManager().sendToAround(null, blockEvent.getPos().getX(), blockEvent.getPos().getY(), blockEvent.getPos().getZ(), 64.0D, this.getRegistryKey(), new BlockEventS2CPacket(blockEvent.getPos(), blockEvent.getBlock(), blockEvent.getType(), blockEvent.getData()));
         }
         BlockPos pos = blockEvent.getPos();
-        if((out||SubTickSettings.includeInvalidBlockEvents)&&SubTickSettings.highlightBlockEvents) {
+        if((validBe||SubTickSettings.includeInvalidBlockEvents)&&SubTickSettings.highlightBlockEvents) {
             Variables.addHighlight(pos.getX(), pos.getY(), pos.getZ(), server.getPlayerManager().getPlayerList(), toServerWorld());
         }
-        return out;
+        return validBe&&Variables.horizontalDistance(Variables.commandSrcPos, blockEvent.getPos())<SubTickSettings.beRadius;
     }
 
     @Inject(method = "addSyncedBlockEvent",

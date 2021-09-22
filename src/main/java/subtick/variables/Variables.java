@@ -8,12 +8,12 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitiesDestroyS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import subtick.mixins.MinecraftServerMixin;
 
 import java.util.*;
 
@@ -40,12 +40,15 @@ public class Variables {
 
     public static Queue<int[]> clientHighlights;
 
+    public static Vec3d commandSrcPos;
+
     static {
         worldVariables = new HashMap<>();
         worldVariables.put(World.OVERWORLD, new WorldData("Overworld"));
         worldVariables.put(World.NETHER, new WorldData("Nether"));
         worldVariables.put(World.END, new WorldData("End"));
         clientHighlights = new ArrayDeque<>();
+        commandSrcPos = Vec3d.ZERO;//so that not null
     }
 
     public static WorldData getData(RegistryKey<World> dimension){
@@ -132,6 +135,12 @@ public class Variables {
             }
         }
         clientHighlights.add(new int[]{entity.getId(), Variables.frozenTickCount});
+    }
+
+    public static double horizontalDistance(Vec3d srcPos, BlockPos block){
+        double dx = srcPos.x-block.getX();
+        double dz = srcPos.z-block.getZ();
+        return Math.sqrt(dx*dx+dz*dz);
     }
 
     public static void clearHighlights(List<ServerPlayerEntity> players){

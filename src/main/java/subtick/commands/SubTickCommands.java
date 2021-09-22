@@ -66,11 +66,13 @@ public class SubTickCommands {
          } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
              Variables.beStep = count;
              Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
+             Variables.commandSrcPos = c.getSource().getPosition();
          } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
              if(data.beCount==0){
                  Messenger.m(c.getSource(), "w no more block events in this dimension");
              } else {
                  Variables.beStep = count;
+                 Variables.commandSrcPos = c.getSource().getPosition();
              }
          } else {
              Messenger.m(c.getSource(), "w Block Events has passed for this dimension");
@@ -96,6 +98,7 @@ public class SubTickCommands {
             Variables.bePlay = count;
             Variables.playInterval = interval;
             Variables.playStart = Variables.frozenTickCount-1;
+            Variables.commandSrcPos = c.getSource().getPosition();
         } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
             if(data.beCount==0){
                 Messenger.m(c.getSource(), "w No more block events in this dimension");
@@ -104,6 +107,7 @@ public class SubTickCommands {
                     Variables.bePlay = count;
                     Variables.playInterval = interval;
                     Variables.playStart = Variables.frozenTickCount-1;
+                    Variables.commandSrcPos = c.getSource().getPosition();
                 } else {
                     Messenger.m(c.getSource(), "w Already playing block events");
                 }

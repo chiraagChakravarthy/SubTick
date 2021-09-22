@@ -32,11 +32,7 @@ public abstract class MinecraftServerMixin
         extends ReentrantThreadExecutor<ServerTask>
         implements SnooperListener, CommandOutput, AutoCloseable {
 
-    @Shadow private int ticks;
-
     @Shadow private PlayerManager playerManager;
-
-    @Shadow public abstract PlayerManager getPlayerManager();
 
     public MinecraftServerMixin(String string) {
         super(string);
