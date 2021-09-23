@@ -18,19 +18,12 @@ import net.minecraft.world.World;
 import java.util.*;
 
 public class Variables {
-    //public static final int TICK_FREEZE = 0, BLOCK_EVENTS = 1, POST_TICK = 2;
-
     public static boolean actuallyProcessEntities;
     public static RegistryKey<World> currentDimension;
     public static Phase currentTickPhase;
     public static RegistryKey<World> targetDimension;
     public static Phase targetTickPhase;
     public static Map<RegistryKey<World>,WorldData> worldVariables;
-
-    public static String[] tickPhasePluralNames = new String[]{
-        "Tick Freeze",
-        "Block Events"
-    };
 
     public static int beStep = 0, bedStep = 0;
     public static int bePlay = 0, bedPlay = 0;
@@ -85,8 +78,8 @@ public class Variables {
 
     public static boolean aBeforeB(RegistryKey<World> dimA,Phase phaseA,RegistryKey<World> dimB,Phase phaseB) {
         return (dimA == dimB && phaseA.isBefore(phaseB)) ||
-                   dimB == World.END ||
-                   (dimB == World.NETHER && dimA == World.OVERWORLD);
+                dimB == World.END ||
+               (dimB == World.NETHER && dimA == World.OVERWORLD);
     }
 
     //ensures play variables are cleared when changing target phase
@@ -127,7 +120,7 @@ public class Variables {
                 player.networkHandler.sendPacket(dataPacket);
             }
         }
-        clientHighlights.add(new int[]{entity.getId(),Variables.frozenTickCount});
+        clientHighlights.add(new int[] {entity.getId(),Variables.frozenTickCount});
     }
 
     public static double horizontalDistance(Vec3d srcPos,BlockPos block) {
@@ -139,15 +132,12 @@ public class Variables {
     public static void clearHighlights(List<ServerPlayerEntity> players) {
         EntitiesDestroyS2CPacket packet = new EntitiesDestroyS2CPacket();
         IntList ids = packet.getEntityIds();
-        while(clientHighlights.size() > 0) {
+        while(!clientHighlights.isEmpty())
             ids.add(clientHighlights.poll()[0]);
-        }
 
-        for(ServerPlayerEntity player : players) {
-            if(ServerNetworkHandler.isValidCarpetPlayer(player)) {
+        for(ServerPlayerEntity player : players)
+            if(ServerNetworkHandler.isValidCarpetPlayer(player))
                 player.networkHandler.sendPacket(packet);
-            }
-        }
     }
 
     public static RegistryKey<World> recentPlayerDimension = null;

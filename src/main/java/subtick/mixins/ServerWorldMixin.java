@@ -62,6 +62,7 @@ public abstract class ServerWorldMixin extends World {
         final BlockPos bePos = blockEvent.getPos();
         final Block beBlock = blockEvent.getBlock();
         final PlayerManager players = server.getPlayerManager();
+        final boolean blockStateCheck = getBlockState(bePos).isOf(beBlock);
         if(processBlockEvent(blockEvent))
             players.sendToAround(
                 null,
@@ -74,7 +75,7 @@ public abstract class ServerWorldMixin extends World {
                     blockEvent.getData()
                 )
             );
-        if(SubTickSettings.includeInvalidBlockEvents || getBlockState(bePos).isOf(beBlock)) {
+        if(SubTickSettings.includeInvalidBlockEvents || blockStateCheck) {
             if(SubTickSettings.highlightBlockEvents)
                 addHighlight(
                     bePos.getX(),bePos.getY(),bePos.getZ(),
