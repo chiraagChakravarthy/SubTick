@@ -6,7 +6,8 @@
     "ServerWorldMixin",
     "ServerPlayerInteractionManagerMixin",
     "MinecraftServerMixin",
-    "DataBuilderMixin"
+    "DataBuilderMixin",
+    "PistonBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

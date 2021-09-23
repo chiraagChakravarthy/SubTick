@@ -14,4 +14,7 @@ public class SubTickSettings {
 
     @Rule(desc = "maximum horizontal distance from the player block events will be stepped through", category = "SUBTICK")
     public static int beRadius = 200;
+
+    @Rule(desc = "changes one line of code that makes lossless bedrock breaking possible again (barely)", category = "SUBTICK")
+    public static boolean losslessBedrockBreaking = false;
 }
