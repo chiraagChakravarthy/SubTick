@@ -7,6 +7,7 @@ import net.minecraft.block.Block;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
@@ -24,7 +25,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import subtick.SubTickSettings;
+import subtick.variables.Phase;
 import subtick.variables.Variables;
+
+import static subtick.variables.Variables.*;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -36,7 +40,7 @@ public abstract class ServerWorldMixin extends World {
     @Shadow @Final private ObjectLinkedOpenHashSet<BlockEvent> syncedBlockEventQueue;
     @Shadow @Final private MinecraftServer server;
 
-    @Shadow private boolean processBlockEvent(BlockEvent event){return false;}
+    @Shadow private boolean processBlockEvent(BlockEvent event) {return false;}
 
     @Shadow public abstract List<ServerPlayerEntity> getPlayers();
 
@@ -44,58 +48,75 @@ public abstract class ServerWorldMixin extends World {
 
     private static int prevSize;
 
-    protected ServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef, DimensionType dimensionType, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
-        super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
+    protected ServerWorldMixin(MutableWorldProperties properties,
+                               RegistryKey<World> registryRef,
+                               DimensionType dimensionType,
+                               Supplier<Profiler> profiler,
+                               boolean isClient,boolean debugWorld,
+                               long seed) {
+        super(properties,registryRef,dimensionType,profiler,isClient,debugWorld,seed);
     }
 
-    private boolean doBlockEvent(){
-        BlockEvent blockEvent = this.syncedBlockEventQueue.removeFirst();
-        boolean validBe = getBlockState(blockEvent.getPos()).isOf(blockEvent.getBlock())||SubTickSettings.includeInvalidBlockEvents;
-
-        if (this.processBlockEvent(blockEvent)) {
-            this.server.getPlayerManager().sendToAround(null, blockEvent.getPos().getX(), blockEvent.getPos().getY(), blockEvent.getPos().getZ(), 64.0D, this.getRegistryKey(), new BlockEventS2CPacket(blockEvent.getPos(), blockEvent.getBlock(), blockEvent.getType(), blockEvent.getData()));
+    private boolean doBlockEvent() {
+        final BlockEvent blockEvent = syncedBlockEventQueue.removeFirst();
+        final BlockPos bePos = blockEvent.getPos();
+        final Block beBlock = blockEvent.getBlock();
+        final PlayerManager players = server.getPlayerManager();
+        if(processBlockEvent(blockEvent))
+            players.sendToAround(
+                null,
+                bePos.getX(),bePos.getY(),bePos.getZ(),
+                64.0D,
+                getRegistryKey(),
+                new BlockEventS2CPacket(
+                    bePos,beBlock,
+                    blockEvent.getType(),
+                    blockEvent.getData()
+                )
+            );
+        if(SubTickSettings.includeInvalidBlockEvents || getBlockState(bePos).isOf(beBlock)) {
+            if(SubTickSettings.highlightBlockEvents)
+                addHighlight(
+                    bePos.getX(),bePos.getY(),bePos.getZ(),
+                    players.getPlayerList(),toServerWorld()
+                );
+            return horizontalDistance(commandSrcPos,bePos) < SubTickSettings.beRadius;
         }
-        BlockPos pos = blockEvent.getPos();
-        if(validBe&&SubTickSettings.highlightBlockEvents) {
-            Variables.addHighlight(pos.getX(), pos.getY(), pos.getZ(), server.getPlayerManager().getPlayerList(), toServerWorld());
-        }
-        return validBe&&Variables.horizontalDistance(Variables.commandSrcPos, blockEvent.getPos())<SubTickSettings.beRadius;
+        return false;
     }
 
-    @Inject(method = "addSyncedBlockEvent",
-            at = @At("HEAD"))
-    public void recordBeSize(BlockPos pos, Block block, int type, int data, CallbackInfo ci){
+    @Inject(method = "addSyncedBlockEvent",at = @At("HEAD"))
+    public void recordBeSize(BlockPos pos,Block block,int type,int data,CallbackInfo ci) {
         prevSize = syncedBlockEventQueue.size();
     }
 
-    @Inject(method = "addSyncedBlockEvent",
-            at=@At("TAIL"))
-    public void incrementBe(BlockPos pos, Block block, int type, int data, CallbackInfo ci){
-        RegistryKey<World> dimension = Variables.inWorldTick?Variables.currentDimension:Variables.recentPlayerDimension;
-        if(prevSize<syncedBlockEventQueue.size()){
-            Variables.getData(dimension).beCount++;
-        }
+    @Inject(method = "addSyncedBlockEvent",at = @At("TAIL"))
+    public void incrementBe(BlockPos pos,Block block,int type,int data,CallbackInfo ci) {
+        if(prevSize < syncedBlockEventQueue.size())
+            getData(inWorldTick? currentDimension : recentPlayerDimension).beCount++;
     }
 
-    @Inject(method = "processBlockEvent",
-            at=@At("HEAD"))
-    public void decrementBe(BlockEvent event, CallbackInfoReturnable<Boolean> cir){
-        Variables.getData(getRegistryKey()).beCount--;
-        Variables.executedBeCount++;
+    @Inject(method = "processBlockEvent",at = @At("HEAD"))
+    public void decrementBe(BlockEvent event,CallbackInfoReturnable<Boolean> cir) {
+        getData(getRegistryKey()).beCount--;
+        executedBeCount++;
     }
 
-    @Inject(method="tick",
-            at = @At("HEAD"),
-            cancellable = true)
-    public void tickStart(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        defaultTickPhaseLogic(getRegistryKey(), Variables.TICK_FREEZE);
+    @Inject(method = "tick",at = @At("HEAD"),cancellable = true)
+    public void tickStart(BooleanSupplier shouldKeepTicking,CallbackInfo ci) {
+        defaultTickPhaseLogic(getRegistryKey(),Phase.TICK_FREEZE);
     }
 
-    @Inject(method = "tick",
-            at=@At(target = "Lnet/minecraft/server/world/ServerWorld;processSyncedBlockEvents()V", value = "INVOKE"),
-            cancellable = true)
-    public void beforeBlockEvents(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        if(defaultTickPhaseLogic(getRegistryKey(), Variables.BLOCK_EVENTS)){
+    @Inject(
+        method = "tick",
+        at = @At(
+            target = "Lnet/minecraft/server/world/ServerWorld;processSyncedBlockEvents()V",
+            value = "INVOKE"
+        ),
+        cancellable = true
+    )
+    public void beforeBlockEvents(BooleanSupplier shouldKeepTicking,CallbackInfo ci) {
+        if(defaultTickPhaseLogic(getRegistryKey(),Phase.BLOCK_EVENTS)) {
             TickSpeed.process_entities = true;
             blockEventStep();
             TickSpeed.process_entities = false;
@@ -103,80 +124,63 @@ public abstract class ServerWorldMixin extends World {
     }
 
     //returns if this phase should be stepped through
-    private static boolean defaultTickPhaseLogic(RegistryKey<World> dimension, int phase){
+    private static boolean defaultTickPhaseLogic(RegistryKey<World> dimension,Phase phase) {
         TickSpeed.process_entities = false;
-        if(Variables.isBeforeCurrent(dimension, phase)){
+        if(isBeforeCurrent(dimension,phase))
             return false;
+        if(currentBeforeTarget() && (isBeforeTarget(dimension,phase) || isAtTarget(dimension,phase))) {
+            currentDimension = dimension;
+            currentTickPhase = phase;
         }
-        if(Variables.currentBeforeTarget()&&(Variables.isBeforeTarget(dimension, phase)||Variables.isAtTarget(dimension, phase))){
-            Variables.currentDimension = dimension;
-            Variables.currentTickPhase = phase;
-        }
-        if(Variables.currentAtTarget()){
-            return Variables.isAtCurrent(dimension, phase);
-        }
+        if(currentAtTarget())
+            return isAtCurrent(dimension,phase);
         TickSpeed.process_entities = true;
         return false;
     }
 
-    private void blockEventStep(){
-        boolean played = false;
-        if((Variables.frozenTickCount-Variables.playStart)%Variables.playInterval==0) {
-            if (Variables.bedPlay == 0) {
-                if (Variables.bePlay != 0) {
-                    Variables.bePlay--;
-                    Variables.beStep++;
-                    played = true;
-                }
-            } else {
-                Variables.bedPlay--;
-                Variables.bedStep++;
-                played = true;
-            }
+    private void blockEventStep() {
+        final boolean played;
+        if(played = (frozenTickCount - playStart) % playInterval == 0 && !(bedPlay == 0 || bePlay == 0)) {
+            --bePlay;
+            ++beStep;
         }
-        if(Variables.beStep!=0||Variables.bedStep!=0){
-            Variables.clearHighlights(server.getPlayerManager().getPlayerList());
-        }
+        final List<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
+        if(beStep != 0 || bedStep != 0)
+            clearHighlights(players);
 
-        if(Variables.executedBeCount >= Variables.bedEnd){
-            Variables.bedEnd += syncedBlockEventQueue.size();
-        }
+        if(executedBeCount >= bedEnd)
+            bedEnd += syncedBlockEventQueue.size();
 
-        if(Variables.bedStep==0){
-            for (int i = 0; i < Variables.beStep; i++) {
-                if(syncedBlockEventQueue.size()==0){
-                    break;
-                }
-                if(!doBlockEvent()&&!SubTickSettings.includeInvalidBlockEvents){
-                    i--;
-                }
-            }
-        } else {
-            int bedSize = Variables.bedEnd-Variables.executedBeCount;
-            for (int i = 0; i < bedSize; i++) {
+        if(bedStep != 0) {
+            for(int i = 0;i < bedEnd - executedBeCount;++i)
                 doBlockEvent();
-            }
-            Variables.bedStep--;
-            for (int i = 0; i < Variables.bedStep; i++) {
-                bedSize = syncedBlockEventQueue.size();
-                for (int j = 0; j < bedSize; j++) {
-                    if(syncedBlockEventQueue.size()==0){
-                        break;
-                    }
+            --bedStep;
+            //TODO prgmTrouble:
+            // I think that this section can be improved by simply
+            // calling doBlockEvent() until the queue is empty.
+            // I don't know enough about what's happening here atm
+            // to know for sure.
+            for(int i = 0;i < bedStep && !syncedBlockEventQueue.isEmpty();++i) {
+                final int nbed = syncedBlockEventQueue.size();
+                for(int j = 0;j < nbed && !syncedBlockEventQueue.isEmpty();++j)
                     doBlockEvent();
-                }
             }
+        } else
+            for(int i = 0;i < beStep && !syncedBlockEventQueue.isEmpty();)
+                if(doBlockEvent() || SubTickSettings.includeInvalidBlockEvents)
+                    ++i;
+
+        beStep = 0;
+        bedStep = 0;
+        if(getData(getRegistryKey()).beCount == 0) {
+            bePlay = 0;
+            bedPlay = 0;
         }
-        Variables.beStep = 0;
-        Variables.bedStep = 0;
-        if(Variables.getData(getRegistryKey()).beCount==0){
-            Variables.bePlay = 0;
-            Variables.bedPlay = 0;
-        }
-        if (Variables.bePlay==0&&Variables.bedPlay==0&&played) {
-            for(PlayerEntity player : server.getPlayerManager().getPlayerList()){
-                Messenger.m(player, "w Finished playing block events");
-            }
-        }
+        //TODO prgmTrouble:
+        // I think that the bePlay and bedPlay checks can be elided somehow,
+        // but I need to understand the code better to know for sure.
+        if(played && bePlay == 0 && bedPlay == 0)
+            for(PlayerEntity player : players)
+                Messenger.m(player,"w Finished playing block events");
     }
 }

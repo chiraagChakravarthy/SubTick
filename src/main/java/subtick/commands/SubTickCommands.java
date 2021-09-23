@@ -7,187 +7,186 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import subtick.variables.Variables;
-import subtick.variables.WorldData;
+import subtick.variables.Phase;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
+import static subtick.variables.Variables.*;
 
 public class SubTickCommands {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(literal("be")
-                .then(literal("step")
-                        .then(argument("count", integer(1)).executes((c) -> beStep(c, getInteger(c, "count"))))
-                        .executes((c) -> beStep(c, 1))
+        dispatcher.register(
+            literal("be")
+                .then(
+                    literal("step")
+                        .then(
+                            argument("count",integer(1))
+                                .executes(c -> beStep(c,getInteger(c,"count")))
+                        )
+                        .executes(SubTickCommands::beStep)
                 )
-
-                .then(literal("play")
-                    .then(argument("interval", integer(1))
-                        .then(argument("count", integer(1))
-                            .executes((c)-> bePlay(c, getInteger(c, "interval"), getInteger(c, "count"))))
-                        .executes((c)->bePlay(c, getInteger(c, "interval"), Integer.MAX_VALUE))
-                    )
-                    .executes((c)-> bePlay(c, 1, 0))
+                .then(
+                    literal("play")
+                        .then(
+                            argument("interval",integer(1))
+                                .then(
+                                    argument("count",integer(1))
+                                        .executes(c -> bePlay(c,getInteger(c,"interval"),getInteger(c,"count")))
+                                )
+                                .executes(c -> bePlay(c,getInteger(c,"interval"),Integer.MAX_VALUE))
+                        )
+                        .executes(SubTickCommands::bePlay)
                 )
-                .then(literal("count").executes(SubTickCommands::beCount)));
-
-        dispatcher.register(literal("bed")
-                .then(literal("step")
-                        .then(argument("count", integer(1)).executes((c) -> bedStep(c, getInteger(c, "count"))))
-                        .executes(c -> bedStep(c, 1))
+                .then(
+                    literal("count")
+                        .executes(SubTickCommands::beCount)
                 )
+        );
 
-                .then(literal("play")
-                    .then(argument("interval", integer(1))
-                        .then(argument("count", integer(1))
-                            .executes((c)-> bedPlay(c, getInteger(c, "interval"), getInteger(c, "count"))))
-                        .executes((c)->bedPlay(c, getInteger(c, "interval"), Integer.MAX_VALUE))
-                    )
-                    .executes((c)-> bedPlay(c, 1, 0))
-                ));
+        dispatcher.register(
+            literal("bed")
+                .then(
+                    literal("step")
+                        .then(
+                            argument("count",integer(1))
+                                .executes(c -> bedStep(c,getInteger(c,"count")))
+                        )
+                        .executes(SubTickCommands::bedStep)
+                )
+                .then(
+                    literal("play")
+                        .then(
+                            argument("interval",integer(1))
+                                .then(
+                                    argument("count",integer(1))
+                                        .executes(c -> bedPlay(c,getInteger(c,"interval"),getInteger(c,"count")))
+                                )
+                                .executes(c -> bedPlay(c,getInteger(c,"interval"),Integer.MAX_VALUE))
+                        )
+                        .executes(SubTickCommands::bedPlay)
+                )
+        );
 
-        dispatcher.register(literal("when").executes(SubTickCommands::when));
+        dispatcher.register(
+            literal("when")
+                .executes(SubTickCommands::when)
+        );
     }
 
-     private static int beStep(CommandContext<ServerCommandSource> c, int count){
-         if(Variables.bePlay!=0||Variables.bedPlay!=0){
-             //cancelled
-             Variables.bePlay = 0;
-             Variables.bedPlay = 0;
-             Messenger.m(c.getSource(), "w Cancelled playing block events");
-         }
-         RegistryKey<World> dimension = c.getSource().getWorld().getRegistryKey();
-         WorldData data = Variables.getData(dimension);
-         if(TickSpeed.process_entities){
-             Messenger.m(c.getSource(), "w must be in tick freeze");
-         } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
-             Variables.beStep = count;
-             Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
-             Variables.commandSrcPos = c.getSource().getPosition();
-         } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-             if(data.beCount==0){
-                 Messenger.m(c.getSource(), "w no more block events in this dimension");
-             } else {
-                 Variables.beStep = count;
-                 Variables.commandSrcPos = c.getSource().getPosition();
-             }
-         } else {
-             Messenger.m(c.getSource(), "w Block Events has passed for this dimension");
-         }
-         return 0;
+    private static boolean cancelPlay(ServerCommandSource src) {
+        if(bePlay != 0 || bedPlay != 0) {
+            bePlay = 0;
+            bedPlay = 0;
+            Messenger.m(src,"w Cancelled playing block events");
+            return true;
+        }
+        return false;
+    }
+    private static boolean assertTickFrozen(ServerCommandSource src) {
+        if(TickSpeed.process_entities) {
+            Messenger.m(src,"w must be in tick freeze");
+            return false;
+        }
+        return true;
+    }
+    private static boolean assertMoreBlockEvents(ServerCommandSource src,RegistryKey<World> dim) {
+        if(getData(dim).beCount == 0) {
+            Messenger.m(src,"w no more block events in this dimension");
+            return false;
+        }
+        return true;
+    }
+    private static void setTarget(RegistryKey<World> dim,ServerCommandSource src,int count,boolean setPos) {
+        beStep = count;
+        setTargetPhase(dim,Phase.BLOCK_EVENTS,src.getServer());
+        if(setPos) commandSrcPos = src.getPosition();
+    }
+    private static void setTarget(RegistryKey<World> dim,ServerCommandSource src,int count,boolean setPos,int interval) {
+        setTarget(dim,src,count,setPos);
+        playInterval = interval;
+        playStart = frozenTickCount - 1;
+    }
+    private static void assertNotPlaying(ServerCommandSource src,int count,int interval,boolean setPos) {
+        if(bePlay == 0 && bedPlay == 0) {
+            bePlay = count;
+            playInterval = interval;
+            playStart = frozenTickCount - 1;
+            if(setPos) commandSrcPos = src.getPosition();
+        } else
+            Messenger.m(src,"w Already playing block events");
+    }
+    @FunctionalInterface interface SetTargetFunctor {void apply(RegistryKey<World> dim,ServerCommandSource src);}
+    @FunctionalInterface interface MoreBlockEventsFunctor {void apply(ServerCommandSource src);}
+    private static void tick(CommandContext<ServerCommandSource> c,boolean assertsPlay,
+                             SetTargetFunctor setTarget,MoreBlockEventsFunctor moreBE) {
+        final ServerCommandSource src = c.getSource();
+        // '!(cancelPlay(src) && assertsPlay)' runs the function and enforces the result iff the flag is set.
+        if(!(cancelPlay(src) && assertsPlay) && assertTickFrozen(src)) {
+            final RegistryKey<World> dim = src.getWorld().getRegistryKey();
+            if(targetBefore(dim,Phase.BLOCK_EVENTS))
+                setTarget.apply(dim,src);
+            else if(!isAtTarget(dim,Phase.BLOCK_EVENTS))
+                Messenger.m(src,"w "+Phase.BLOCK_EVENTS.plural()+" has passed for this dimension");
+            else if(assertMoreBlockEvents(src,dim))
+                moreBE.apply(src);
+        }
     }
 
-    private static int bePlay(CommandContext<ServerCommandSource> c, int interval, int count){
-        if(Variables.bePlay!=0||Variables.bedPlay!=0){
-            //cancelled
-            Variables.bePlay = 0;
-            Variables.bedPlay = 0;
-            Messenger.m(c.getSource(), "w Cancelled playing block events");
-            return 0;
-        }
-
-        RegistryKey<World> dimension = c.getSource().getWorld().getRegistryKey();
-        WorldData data = Variables.getData(dimension);
-        if(TickSpeed.process_entities){
-            Messenger.m(c.getSource(), "w Must be in tick freeze");
-        } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
-            Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
-            Variables.bePlay = count;
-            Variables.playInterval = interval;
-            Variables.playStart = Variables.frozenTickCount-1;
-            Variables.commandSrcPos = c.getSource().getPosition();
-        } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-            if(data.beCount==0){
-                Messenger.m(c.getSource(), "w No more block events in this dimension");
-            } else {
-                if(Variables.bePlay==0&&Variables.bedPlay==0){
-                    Variables.bePlay = count;
-                    Variables.playInterval = interval;
-                    Variables.playStart = Variables.frozenTickCount-1;
-                    Variables.commandSrcPos = c.getSource().getPosition();
-                } else {
-                    Messenger.m(c.getSource(), "w Already playing block events");
-                }
-            }
-        } else {
-            Messenger.m(c.getSource(), "w Block events has passed for this dimension");
-        }
+    private static int beStep(CommandContext<ServerCommandSource> c) {return beStep(c,1);}
+    private static int beStep(CommandContext<ServerCommandSource> c,int count) {
+        tick(
+            c,false,
+            (dim,src) -> setTarget(dim,src,count,true),
+            src -> {beStep = count; commandSrcPos = src.getPosition();}
+        );
+        return 0;
+    }
+    private static int bePlay(CommandContext<ServerCommandSource> c) {return bePlay(c,1,0);}
+    private static int bePlay(CommandContext<ServerCommandSource> c,int interval,int count) {
+        tick(
+            c,true,
+            (dim,src) -> setTarget(dim,src,count,true,interval),
+            src -> assertNotPlaying(src,count,interval,true)
+        );
         return 0;
     }
 
-    private static int beCount(CommandContext<ServerCommandSource> c){
-        Messenger.m(c.getSource(), "w " + Variables.getData(c.getSource().getWorld().getRegistryKey()).beCount);
+    private static int beCount(CommandContext<ServerCommandSource> c) {
+        final ServerCommandSource src = c.getSource();
+        Messenger.m(src,"w " + getData(src.getWorld().getRegistryKey()).beCount);
         return 0;
     }
 
-    private static int bedStep(CommandContext<ServerCommandSource> c, int count){
-        if(Variables.bePlay!=0||Variables.bedPlay!=0){
-            //cancelled
-            Variables.bePlay = 0;
-            Variables.bedPlay = 0;
-            Messenger.m(c.getSource(), "w Cancelled playing block events");
-        }
-        RegistryKey<World> dimension = c.getSource().getWorld().getRegistryKey();
-        WorldData data = Variables.getData(dimension);
-        if(TickSpeed.process_entities){
-            Messenger.m(c.getSource(), "w Must be in tick freeze");
-        } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
-            Variables.bedStep = count;
-            Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
-        } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-            if(data.beCount==0){
-                Messenger.m(c.getSource(), "w No more block events in this dimension");
-            } else {
-                Variables.bedStep = count;
-            }
-        } else {
-            Messenger.m(c.getSource(), "w Block events has passed for this dimension");
-        }
+    private static int bedStep(CommandContext<ServerCommandSource> c) {return bedStep(c,1);}
+    private static int bedStep(CommandContext<ServerCommandSource> c,int count) {
+        tick(
+            c,false,
+            (dim,src) -> setTarget(dim,src,count,false),
+            src -> bedStep = count
+        );
+        return 0;
+    }
+    private static int bedPlay(CommandContext<ServerCommandSource> c) {return bedPlay(c,1,0);}
+    private static int bedPlay(CommandContext<ServerCommandSource> c,int interval,int count) {
+        tick(
+            c,true,
+            (dim,src) -> setTarget(dim,src,count,false,interval),
+            src -> assertNotPlaying(src,count,interval,false)
+        );
         return 0;
     }
 
-    public static int bedPlay(CommandContext<ServerCommandSource> c, int interval, int count){
-        if(Variables.bePlay!=0||Variables.bedPlay!=0){
-            //cancelled
-            Variables.bePlay = 0;
-            Variables.bedPlay = 0;
-            Messenger.m(c.getSource(), "w Cancelled playing block events");
-            return 0;
-        }
-        RegistryKey<World> dimension = c.getSource().getWorld().getRegistryKey();
-        WorldData data = Variables.getData(dimension);
-        if(TickSpeed.process_entities){
-            Messenger.m(c.getSource(), "w Must be in tick freeze");
-        } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
-            Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
-            Variables.bedPlay = count;
-            Variables.playInterval = interval;
-            Variables.playStart = Variables.frozenTickCount-1;
-        } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-            if(data.beCount==0){
-                Messenger.m(c.getSource(), "w No more block events in this dimension");
-            } else {
-                if(Variables.bePlay==0&&Variables.bedPlay==0){
-                    Variables.bedPlay = count;
-                    Variables.playInterval = interval;
-                    Variables.playStart = Variables.frozenTickCount-1;
-                } else {
-                    Messenger.m(c.getSource(), "w Already playing block events");
-                }
-            }
-        } else {
-            Messenger.m(c.getSource(), "w Block events has passed for this dimension");
-        }
-        return 0;
-    }
-
-    private static int when(CommandContext<ServerCommandSource> c){
-        Messenger.m(c.getSource(), "w " + (TickSpeed.process_entities ? "Game is not frozen"
-                :"Currently running " + Variables.tickPhasePluralNames[Variables.currentTickPhase]
-                + " in the " + Variables.getData(Variables.targetDimension).name));
+    private static int when(CommandContext<ServerCommandSource> c) {
+        final ServerCommandSource src = c.getSource();
+        if(assertTickFrozen(src))
+            Messenger.m(
+                src,
+                "w Currently running " + currentTickPhase.plural() +
+                " in the " + getData(targetDimension).name
+            );
         return 0;
     }
 }
