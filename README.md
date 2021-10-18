@@ -19,6 +19,7 @@ Download the jar file from the releases tab and add to your mods folder, along w
 * vanillaPistonAnimations: let moving block animations play to completion on carpet clients (only really works on servers)
 * highlightBlockEvents: show where block events take place to clients using glowing highlights
 * losslessBedrockBreaking: changes one line of code that makes lossless bedrock breaking possible again (not vanilla lol, false by default)
+* be radius: specifies the maximum distance away from the player block events will be stepped through. good on cmp servers with piston clocks at spawn.
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
