@@ -4,7 +4,7 @@ Subtick is a carpet extension which lets you step through piston block events in
 
 ## Installation
 
-Download the jar file and add to your mods folder, along with fabric carpet
+Download the jar file from the releases tab and add to your mods folder, along with fabric carpet
 
 ## Commands
 * be step: steps a single block event
