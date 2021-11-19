@@ -12,7 +12,7 @@ Download the jar file from the releases tab and add to your mods folder, along w
 * be play: plays through block events on a given time interval
 * bed play: plays through entire block event delays on a given time interval
 * be count: says the number of block events currently in the queue
-* now: says which tick phase the game is currently in
+* when: says which tick phase the game is currently in
 
 ## Carpet Rules
 * includeInvalidBlockEvents: step through block events executed on the wrong block type (these will never affect anything)
