@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '0.8-SNAPSHOT'
+    id 'fabric-loom' version '0.11-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -9,15 +9,12 @@ repositories {
     }
 }
 
-sourceCompatibility = JavaVersion.VERSION_16
-targetCompatibility = JavaVersion.VERSION_16
+sourceCompatibility = JavaVersion.VERSION_18
+targetCompatibility = JavaVersion.VERSION_18
 
 archivesBaseName = project.archives_base_name
 version = project.minecraft_version+'-'+project.mod_version
 group = project.maven_group
-
-minecraft {
-}
 
 dependencies {
     //to change the versions see the gradle.properties file
@@ -50,6 +47,10 @@ tasks.withType(JavaCompile).configureEach {
 
     // Minecraft 1.17 (21w19a) upwards uses Java 16.
     it.options.release = 16
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/subtick.accesswidener")
 }
 
 java {

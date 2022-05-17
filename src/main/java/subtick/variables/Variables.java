@@ -3,17 +3,20 @@ package subtick.variables;
 import carpet.network.ServerNetworkHandler;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitiesDestroyS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.core.jmx.Server;
 
 import java.util.*;
 
@@ -40,7 +43,7 @@ public class Variables {
 
     public static Queue<int[]> clientHighlights;
 
-    public static Vec3d commandSrcPos;
+    public static ServerCommandSource commandSource;
 
     static {
         worldVariables = new HashMap<>();
@@ -48,7 +51,7 @@ public class Variables {
         worldVariables.put(World.NETHER, new WorldData("Nether"));
         worldVariables.put(World.END, new WorldData("End"));
         clientHighlights = new ArrayDeque<>();
-        commandSrcPos = Vec3d.ZERO;//so that not null
+        commandSource = null;
     }
 
     public static WorldData getData(RegistryKey<World> dimension){
@@ -124,6 +127,7 @@ public class Variables {
 
     public static void addHighlight(int x, int y, int z, List<ServerPlayerEntity> players, ServerWorld world){
         FallingBlockEntity entity = new FallingBlockEntity(world, (double)x+.5, y-1/48d, (double)z+.5, Blocks.GLASS.getDefaultState());
+        
         entity.setNoGravity(true);
         entity.setGlowing(true);
         Packet<?> packet = entity.createSpawnPacket();
@@ -157,7 +161,6 @@ public class Variables {
         }
     }
 
-    public static RegistryKey<World> recentPlayerDimension = null;
     public static int frozenTickCount = 0;
     public static int playStart = 0;
     public static boolean inWorldTick = false;

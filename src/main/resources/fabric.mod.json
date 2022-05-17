@@ -4,7 +4,7 @@
   "version": "${version}",
 
 
-  "name": "Sub Tick",
+  "name": "SubTick",
   "description": "for when you're trying to do more than one thing in a tick",
   "authors": [
     "Punchster2"
@@ -13,17 +13,21 @@
   "license": "CC0-1.0",
 
   "environment": "*",
+  "accessWidener": "subtick.accesswidener",
+
   "entrypoints": {
     "main": [
       "subtick.SubTick"
     ]
   },
+
+
   "mixins": [
     "subtick.mixins.json"
   ],
 
   "depends": {
-    "minecraft": "1.17.x",
+    "minecraft": "1.18.x",
     "fabricloader": ">=0.11.3",
     "carpet": ">=1.4.40"
   },

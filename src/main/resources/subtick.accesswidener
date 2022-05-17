@@ -1,0 +1,4 @@
+accessWidener	v1	named
+
+accessible field net/minecraft/server/world/ServerWorld syncedBlockEventQueue Lit/unimi/dsi/fastutil/objects/ObjectLinkedOpenHashSet;
+accessible method net/minecraft/entity/FallingBlockEntity <init> (Lnet/minecraft/world/World;DDDLnet/minecraft/block/BlockState;)V
