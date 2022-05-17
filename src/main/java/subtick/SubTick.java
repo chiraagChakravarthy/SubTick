@@ -7,8 +7,11 @@ import carpet.network.ServerNetworkHandler;
 import carpet.settings.SettingsManager;
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.LiteralText;
+import net.minecraft.world.World;
 import subtick.commands.SubTickCommands;
 
 public class SubTick implements CarpetExtension, ModInitializer
@@ -31,6 +34,10 @@ public class SubTick implements CarpetExtension, ModInitializer
                 ServerNetworkHandler.updateFrozenStateToConnectedPlayers();
             }
         });
+    }
+
+    public static void say(World world, String msg){
+        world.getServer().getPlayerManager().broadcastChatMessage(new LiteralText(msg), MessageType.CHAT, null);
     }
     
     @Override

@@ -60,19 +60,19 @@ public class SubTickCommands {
              Messenger.m(c.getSource(), "w Cancelled playing block events");
          }
          RegistryKey<World> dimension = c.getSource().getWorld().getRegistryKey();
-         WorldData data = Variables.getData(dimension);
+
          if(TickSpeed.process_entities){
              Messenger.m(c.getSource(), "w must be in tick freeze");
          } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
              Variables.beStep = count;
              Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
-             Variables.commandSrcPos = c.getSource().getPosition();
+             Variables.commandSource = c.getSource();
          } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-             if(data.beCount==0){
+             if(c.getSource().getWorld().syncedBlockEventQueue.size()==0){
                  Messenger.m(c.getSource(), "w no more block events in this dimension");
              } else {
                  Variables.beStep = count;
-                 Variables.commandSrcPos = c.getSource().getPosition();
+                 Variables.commandSource = c.getSource();
              }
          } else {
              Messenger.m(c.getSource(), "w Block Events has passed for this dimension");
@@ -89,8 +89,10 @@ public class SubTickCommands {
             return 0;
         }
 
+        int beCount = c.getSource().getWorld().syncedBlockEventQueue.size();
+
         RegistryKey<World> dimension = c.getSource().getWorld().getRegistryKey();
-        WorldData data = Variables.getData(dimension);
+
         if(TickSpeed.process_entities){
             Messenger.m(c.getSource(), "w Must be in tick freeze");
         } else if(Variables.targetBefore(dimension, Variables.BLOCK_EVENTS)){
@@ -98,16 +100,16 @@ public class SubTickCommands {
             Variables.bePlay = count;
             Variables.playInterval = interval;
             Variables.playStart = Variables.frozenTickCount-1;
-            Variables.commandSrcPos = c.getSource().getPosition();
+            Variables.commandSource = c.getSource();
         } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-            if(data.beCount==0){
+            if(beCount==0){
                 Messenger.m(c.getSource(), "w No more block events in this dimension");
             } else {
                 if(Variables.bePlay==0&&Variables.bedPlay==0){
                     Variables.bePlay = count;
                     Variables.playInterval = interval;
                     Variables.playStart = Variables.frozenTickCount-1;
-                    Variables.commandSrcPos = c.getSource().getPosition();
+                    Variables.commandSource = c.getSource();
                 } else {
                     Messenger.m(c.getSource(), "w Already playing block events");
                 }
@@ -119,7 +121,7 @@ public class SubTickCommands {
     }
 
     private static int beCount(CommandContext<ServerCommandSource> c){
-        Messenger.m(c.getSource(), "w " + Variables.getData(c.getSource().getWorld().getRegistryKey()).beCount);
+        Messenger.m(c.getSource(), "w " + c.getSource().getWorld().syncedBlockEventQueue.size());
         return 0;
     }
 
@@ -138,7 +140,7 @@ public class SubTickCommands {
             Variables.bedStep = count;
             Variables.setTargetPhase(dimension, Variables.BLOCK_EVENTS, c.getSource().getServer());
         } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-            if(data.beCount==0){
+            if(c.getSource().getWorld().syncedBlockEventQueue.size()==0){
                 Messenger.m(c.getSource(), "w No more block events in this dimension");
             } else {
                 Variables.bedStep = count;
@@ -167,7 +169,7 @@ public class SubTickCommands {
             Variables.playInterval = interval;
             Variables.playStart = Variables.frozenTickCount-1;
         } else if(Variables.isAtTarget(dimension, Variables.BLOCK_EVENTS)){
-            if(data.beCount==0){
+            if(c.getSource().getWorld().syncedBlockEventQueue.size()==0){
                 Messenger.m(c.getSource(), "w No more block events in this dimension");
             } else {
                 if(Variables.bePlay==0&&Variables.bedPlay==0){

@@ -1,15 +1,28 @@
 package subtick.variables;
 
 import carpet.network.ServerNetworkHandler;
+import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.font.Font;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.EntitiesDestroyS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityTrackerUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.TeamS2CPacket;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Style;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.RegistryKey;
@@ -27,6 +40,11 @@ public class Variables {
     public static int targetTickPhase;
     public static Map<RegistryKey<World>, WorldData> worldVariables;
 
+    private static HashMap<Formatting, Team> teamsByColor = new HashMap<>();
+
+    private static final Scoreboard dummyScoreboard = new Scoreboard();//haha dummy
+
+
     public static String[] tickPhasePluralNames = new String[]{
             "Tick Freeze",
             "Block Events"
@@ -40,7 +58,7 @@ public class Variables {
 
     public static Queue<int[]> clientHighlights;
 
-    public static Vec3d commandSrcPos;
+    public static ServerCommandSource commandSource;
 
     static {
         worldVariables = new HashMap<>();
@@ -48,7 +66,7 @@ public class Variables {
         worldVariables.put(World.NETHER, new WorldData("Nether"));
         worldVariables.put(World.END, new WorldData("End"));
         clientHighlights = new ArrayDeque<>();
-        commandSrcPos = Vec3d.ZERO;//so that not null
+        commandSource = null;
     }
 
     public static WorldData getData(RegistryKey<World> dimension){
@@ -110,7 +128,7 @@ public class Variables {
         bePlay = 0;
         bedEnd = 0;
         executedBeCount = 0;
-        clearHighlights(server.getPlayerManager().getPlayerList());
+        clearHighlights(server.getPlayerManager());
     }
 
     //debug
@@ -122,19 +140,46 @@ public class Variables {
         int i = 0;
     }
 
-    public static void addHighlight(int x, int y, int z, List<ServerPlayerEntity> players, ServerWorld world){
-        FallingBlockEntity entity = new FallingBlockEntity(world, (double)x+.5, y-1/48d, (double)z+.5, Blocks.GLASS.getDefaultState());
+    public static void addHighlight(BlockPos pos, ServerWorld world, Formatting color){
+
+        List<ServerPlayerEntity> players = world.getServer().getPlayerManager().getPlayerList();
+
+        FallingBlockEntity entity = new FallingBlockEntity(world, (double)pos.getX()+.5, pos.getY()-1/48d, (double)pos.getZ()+.5, Blocks.BLUE_STAINED_GLASS.getDefaultState());
+
         entity.setNoGravity(true);
         entity.setGlowing(true);
+        entity.setInvulnerable(true);
+        entity.setCustomNameVisible(true);
+        entity.setCustomName(new LiteralText("1").setStyle(Style.EMPTY.withColor(-1).withBold(true)));
+
         Packet<?> packet = entity.createSpawnPacket();
         EntityTrackerUpdateS2CPacket dataPacket = new EntityTrackerUpdateS2CPacket(entity.getId(), entity.getDataTracker(), true);
+
         for (ServerPlayerEntity player : players) {
             if (ServerNetworkHandler.isValidCarpetPlayer(player)) {
                 player.networkHandler.sendPacket(packet);
                 player.networkHandler.sendPacket(dataPacket);
             }
         }
+
+        Team team = getTeam(color, world.getServer().getPlayerManager());
+        team.getPlayerList().add(entity.getEntityName());
+
+        world.getServer().getPlayerManager().sendToAll(TeamS2CPacket.changePlayerTeam(team, entity.getEntityName(), TeamS2CPacket.Operation.ADD));
+
         clientHighlights.add(new int[]{entity.getId(), Variables.frozenTickCount});
+    }
+
+    private static Team getTeam(Formatting color, PlayerManager players){
+        if(teamsByColor.containsKey(color)){
+            return teamsByColor.get(color);
+        }
+
+        Team team = new Team(dummyScoreboard, "\n" + color.getColorIndex());
+        team.setColor(color);
+        teamsByColor.put(color, team);
+        players.sendToAll(TeamS2CPacket.updateTeam(team, true));
+        return team;
     }
 
     public static double horizontalDistance(Vec3d srcPos, BlockPos block){
@@ -143,21 +188,33 @@ public class Variables {
         return Math.sqrt(dx*dx+dz*dz);
     }
 
-    public static void clearHighlights(List<ServerPlayerEntity> players){
-        EntitiesDestroyS2CPacket packet = new EntitiesDestroyS2CPacket();
-        IntList ids = packet.getEntityIds();
-        while (clientHighlights.size()>0){
-            ids.add(clientHighlights.poll()[0]);
-        }
-
-        for (ServerPlayerEntity player : players) {
+    private static void sendAllCarpetPlayers(PlayerManager players, Packet<?> packet){
+        for(ServerPlayerEntity player : players.getPlayerList()) {
             if (ServerNetworkHandler.isValidCarpetPlayer(player)) {
                 player.networkHandler.sendPacket(packet);
             }
         }
     }
 
-    public static RegistryKey<World> recentPlayerDimension = null;
+    public static void clearHighlights(PlayerManager players){
+        for(Team team : teamsByColor.values()){
+            for(String name : team.getPlayerList()){
+                sendAllCarpetPlayers(players, TeamS2CPacket.changePlayerTeam(team, name, TeamS2CPacket.Operation.REMOVE));
+            }
+            sendAllCarpetPlayers(players, TeamS2CPacket.updateRemovedTeam(team));
+        }
+        teamsByColor.clear();
+
+        EntitiesDestroyS2CPacket packet = new EntitiesDestroyS2CPacket();
+        IntList ids = packet.getEntityIds();
+        while (clientHighlights.size()>0){
+            ids.add(clientHighlights.poll()[0]);
+        }
+
+        players.sendToAll(packet);
+
+    }
+
     public static int frozenTickCount = 0;
     public static int playStart = 0;
     public static boolean inWorldTick = false;

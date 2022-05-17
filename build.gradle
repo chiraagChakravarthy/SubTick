@@ -83,3 +83,7 @@ publishing {
         // mavenLocal()
     }
 }
+
+loom {
+    accessWidener = file("src/main/resources/subtick.accesswidener")
+}

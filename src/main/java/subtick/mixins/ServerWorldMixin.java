@@ -10,6 +10,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryKey;
@@ -57,31 +58,15 @@ public abstract class ServerWorldMixin extends World {
         }
         BlockPos pos = blockEvent.getPos();
         if(validBe&&SubTickSettings.highlightBlockEvents) {
-            Variables.addHighlight(pos.getX(), pos.getY(), pos.getZ(), server.getPlayerManager().getPlayerList(), toServerWorld());
+            Variables.addHighlight(pos, toServerWorld(), Formatting.BLUE);
         }
-        return validBe&&Variables.horizontalDistance(Variables.commandSrcPos, blockEvent.getPos())<SubTickSettings.beRadius;
+        return validBe&&Variables.horizontalDistance(Variables.commandSource.getPosition(), blockEvent.getPos())<SubTickSettings.beRadius;
     }
 
     @Inject(method = "addSyncedBlockEvent",
             at = @At("HEAD"))
     public void recordBeSize(BlockPos pos, Block block, int type, int data, CallbackInfo ci){
         prevSize = syncedBlockEventQueue.size();
-    }
-
-    @Inject(method = "addSyncedBlockEvent",
-            at=@At("TAIL"))
-    public void incrementBe(BlockPos pos, Block block, int type, int data, CallbackInfo ci){
-        RegistryKey<World> dimension = Variables.inWorldTick?Variables.currentDimension:Variables.recentPlayerDimension;
-        if(prevSize<syncedBlockEventQueue.size()){
-            Variables.getData(dimension).beCount++;
-        }
-    }
-
-    @Inject(method = "processBlockEvent",
-            at=@At("HEAD"))
-    public void decrementBe(BlockEvent event, CallbackInfoReturnable<Boolean> cir){
-        Variables.getData(getRegistryKey()).beCount--;
-        Variables.executedBeCount++;
     }
 
     @Inject(method="tick",
@@ -135,7 +120,7 @@ public abstract class ServerWorldMixin extends World {
             }
         }
         if(Variables.beStep!=0||Variables.bedStep!=0){
-            Variables.clearHighlights(server.getPlayerManager().getPlayerList());
+            Variables.clearHighlights(server.getPlayerManager());
         }
 
         if(Variables.executedBeCount >= Variables.bedEnd){
@@ -169,7 +154,7 @@ public abstract class ServerWorldMixin extends World {
         }
         Variables.beStep = 0;
         Variables.bedStep = 0;
-        if(Variables.getData(getRegistryKey()).beCount==0){
+        if(syncedBlockEventQueue.size()==0){
             Variables.bePlay = 0;
             Variables.bedPlay = 0;
         }

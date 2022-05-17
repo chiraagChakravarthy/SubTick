@@ -22,6 +22,8 @@
     "subtick.mixins.json"
   ],
 
+  "accessWidener": "subtick.accesswidener",
+
   "depends": {
     "minecraft": "1.17.x",
     "fabricloader": ">=0.11.3",
