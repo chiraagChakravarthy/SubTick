@@ -3,10 +3,13 @@
   "package": "subtick.mixins",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ServerWorldMixin",
     "MinecraftServerMixin",
-    "DataBuilderMixin",
-    "PistonBlockMixin"
+    "PistonBlockMixin",
+    "carpet.DataBuilderMixin",
+    "world_tickphases.BlockEventsWorldMixin",
+    "world_tickphases.PreTileTicksWorldMixin",
+    "world_tickphases.RaidsWorldMixin",
+    "world_tickphases.TileTicksWorldMixin"
   ],
   "injectors": {
     "defaultRequire": 1

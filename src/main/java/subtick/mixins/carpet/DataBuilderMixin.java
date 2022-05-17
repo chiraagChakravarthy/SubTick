@@ -1,4 +1,4 @@
-package subtick.mixins;
+package subtick.mixins.carpet;
 
 import net.minecraft.nbt.NbtCompound;
 import org.spongepowered.asm.mixin.Mixin;
@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import subtick.SubTickSettings;
+
 @Mixin(targets = "carpet.network.ServerNetworkHandler$DataBuilder")
 public class DataBuilderMixin {
     @Shadow private NbtCompound tag;
