@@ -3,11 +3,12 @@
   "package": "subtick.mixins",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "BlockEntityTickerMixin",
     "EntityListMixin",
     "MinecraftServerMixin",
     "PistonBlockMixin",
     "ServerChunkManagerMixin",
-    "BlockEntityTickerMixin",
+    "WorldTickSchedulerMixin",
     "carpet.DataBuilderMixin",
     "world_tickphases.BlockEntityWorldMixin",
     "world_tickphases.BlockEventsWorldMixin",

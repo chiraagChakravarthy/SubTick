@@ -2,7 +2,6 @@ package subtick.mixins.world_tickphases;
 
 import carpet.helpers.TickSpeed;
 import net.minecraft.block.Block;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
@@ -13,19 +12,18 @@ import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.tick.WorldTickScheduler;
-import org.checkerframework.checker.units.qual.A;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import subtick.TickProgress;
+import subtick.progress.TickProgress;
 
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static subtick.TickProgress.*;
+import static subtick.progress.TickProgress.*;
 
 @Mixin(value = ServerWorld.class, priority = 999)
 public abstract class TileTicksWorldMixin extends World implements StructureWorldAccess {
@@ -52,24 +50,14 @@ public abstract class TileTicksWorldMixin extends World implements StructureWorl
         TickSpeed.process_entities = true;
     }
 
-    @Inject(method = "tick", at=@At(value = "INVOKE",
-            target = "Lnet/minecraft/server/world/ServerWorld;isDebugWorld()Z",
-            shift = At.Shift.AFTER))
-    public void postDebug(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        int runStatus = TickProgress.runStatus();
-        TickSpeed.process_entities = runStatus == RUN_COMPLETELY || runStatus == STEP_FROM_START;
-    }
-
     @Redirect(method = "tick", at=@At(value = "INVOKE",
     target = "Lnet/minecraft/world/tick/WorldTickScheduler;tick(JILjava/util/function/BiConsumer;)V",
     ordinal = 0))
     public void onTileTicks(WorldTickScheduler<Block> instance, long time, int maxTicks, BiConsumer<BlockPos, Block> ticker){
         int runStatus = TickProgress.runStatus();
-        if(runStatus != RUN_COMPLETELY && runStatus != STEP_TO_FINISH){
-            TickSpeed.process_entities = false;
+        if(runStatus == NO_RUN){
             return;
         }
-        TickSpeed.process_entities = true;
         instance.tick(time, maxTicks, ticker);//tickscheduler mixins will handle run types, just need to know they are the ones currently being run
     }
 
@@ -78,11 +66,10 @@ public abstract class TileTicksWorldMixin extends World implements StructureWorl
             ordinal = 1))
     public void onLiquidTicks(WorldTickScheduler<Block> instance, long time, int maxTicks, BiConsumer<BlockPos, Block> ticker){
         int runStatus = TickProgress.update(LIQUID_TICKS, this.getRegistryKey());
-        if(runStatus != RUN_COMPLETELY && runStatus != STEP_TO_FINISH){
-            TickSpeed.process_entities = false;
+        if(runStatus == NO_RUN){
             return;
         }
-        TickSpeed.process_entities = true;
         instance.tick(time, maxTicks, ticker);//tickscheduler mixins will handle run types, just need to know they are the ones currently being run
+        TickSpeed.process_entities = runStatus==RUN_COMPLETELY || runStatus==STEP_TO_FINISH;
     }
 }

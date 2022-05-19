@@ -1,4 +1,4 @@
-package subtick;
+package subtick.progress;
 
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.registry.RegistryKey;

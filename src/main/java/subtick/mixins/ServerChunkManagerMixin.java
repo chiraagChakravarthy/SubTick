@@ -4,14 +4,13 @@ import carpet.helpers.TickSpeed;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.chunk.ChunkManager;
-import net.minecraft.world.tick.Tick;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import subtick.TickProgress;
+import subtick.progress.TickProgress;
 
 @Mixin(ServerChunkManager.class)
 public abstract class ServerChunkManagerMixin extends ChunkManager {
@@ -30,7 +29,7 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
         int dimension = TickProgress.dim(this.world.getRegistryKey());
 
         TickSpeed.process_entities = TickProgress.currentProgress == TickProgress.progressOf(TickProgress.RAIDS, dimension)
-                && TickProgress.runStatus() == TickProgress.RUN_COMPLETELY || TickProgress.runStatus() == TickProgress.STEP_TO_FINISH;
+                && (TickProgress.runStatus() == TickProgress.RUN_COMPLETELY || TickProgress.runStatus() == TickProgress.STEP_TO_FINISH);
     }
 
     @Inject(method = "tickChunks", at = @At(

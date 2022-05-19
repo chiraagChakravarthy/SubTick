@@ -2,16 +2,14 @@ package subtick.mixins;
 
 import carpet.helpers.TickSpeed;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
 import net.minecraft.server.ServerTask;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import subtick.TickProgress;
+import subtick.progress.TickProgress;
 
 import java.util.function.BooleanSupplier;
 
@@ -19,10 +17,6 @@ import java.util.function.BooleanSupplier;
 public abstract class MinecraftServerMixin
         extends ReentrantThreadExecutor<ServerTask>
         implements CommandOutput, AutoCloseable {
-
-    @Shadow private PlayerManager playerManager;
-
-    @Shadow private int ticks;
 
     public MinecraftServerMixin(String string) {
         super(string);
@@ -36,7 +30,6 @@ public abstract class MinecraftServerMixin
             shift= At.Shift.AFTER))
     public void preWorldsTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
         actuallyProcessEntities = TickSpeed.process_entities;
-        System.out.println("\nstart: " + TickProgress.overallStatus());
         if(TickSpeed.process_entities){
             TickProgress.setTarget(TickProgress.POST_TICK);
         }

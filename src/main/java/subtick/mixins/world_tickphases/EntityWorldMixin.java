@@ -14,12 +14,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import subtick.TickProgress;
+import subtick.progress.TickProgress;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static subtick.TickProgress.*;
+import static subtick.progress.TickProgress.*;
 
 @Mixin(value = ServerWorld.class, priority = 999)
 public abstract class EntityWorldMixin extends World implements StructureWorldAccess {

@@ -6,7 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
-import subtick.TickProgress;
+import subtick.progress.TickProgress;
 
 public class NextCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher){
