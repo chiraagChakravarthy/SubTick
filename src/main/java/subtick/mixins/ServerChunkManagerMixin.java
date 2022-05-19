@@ -24,7 +24,7 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
             value = "INVOKE",
             target = "Lnet/minecraft/server/world/ServerWorld;isDebugWorld()Z",
             shift = At.Shift.BEFORE))
-    public void hackVariable(CallbackInfo ci){
+    public void preTickChunks(CallbackInfo ci){
         actuallyProcessEntities = TickSpeed.process_entities;
 
         int dimension = TickProgress.dim(this.world.getRegistryKey());
@@ -37,7 +37,7 @@ public abstract class ServerChunkManagerMixin extends ChunkManager {
             value = "INVOKE",
             target = "Lnet/minecraft/server/world/ServerWorld;isDebugWorld()Z",
             shift = At.Shift.AFTER))
-    public void unhackVariable(CallbackInfo ci){
+    public void postTickChunks(CallbackInfo ci){
         TickSpeed.process_entities = actuallyProcessEntities;
     }
 }

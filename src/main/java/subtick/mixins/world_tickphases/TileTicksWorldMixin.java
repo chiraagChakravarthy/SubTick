@@ -2,6 +2,7 @@ package subtick.mixins.world_tickphases;
 
 import carpet.helpers.TickSpeed;
 import net.minecraft.block.Block;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
@@ -33,12 +34,21 @@ public abstract class TileTicksWorldMixin extends World implements StructureWorl
         super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
     }
 
-    private boolean actuallyProcessEntities;
+
+    /*
+    world border, weather, time
+     */
+    @Inject(method="tick", at=@At("HEAD"))
+    public void tickStart(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
+        int runStatus = TickProgress.update(TILE_TICKS, this.getRegistryKey());
+        if(runStatus == RUN_COMPLETELY || runStatus == STEP_FROM_START){
+            TickSpeed.process_entities = true;
+        }
+    }
 
     @Inject(method = "tick", at=@At(value = "INVOKE",
             target = "Lnet/minecraft/server/world/ServerWorld;isDebugWorld()Z"))
     public void preDebug(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        actuallyProcessEntities = TickSpeed.process_entities;
         TickSpeed.process_entities = true;
     }
 
@@ -46,30 +56,33 @@ public abstract class TileTicksWorldMixin extends World implements StructureWorl
             target = "Lnet/minecraft/server/world/ServerWorld;isDebugWorld()Z",
             shift = At.Shift.AFTER))
     public void postDebug(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        TickSpeed.process_entities = actuallyProcessEntities;
+        int runStatus = TickProgress.runStatus();
+        TickSpeed.process_entities = runStatus == RUN_COMPLETELY || runStatus == STEP_FROM_START;
     }
 
     @Redirect(method = "tick", at=@At(value = "INVOKE",
     target = "Lnet/minecraft/world/tick/WorldTickScheduler;tick(JILjava/util/function/BiConsumer;)V",
     ordinal = 0))
-    public void preTileTicks(WorldTickScheduler<Block> instance, long time, int maxTicks, BiConsumer<BlockPos, Block> ticker){
+    public void onTileTicks(WorldTickScheduler<Block> instance, long time, int maxTicks, BiConsumer<BlockPos, Block> ticker){
         int runStatus = TickProgress.runStatus();
-        if(runStatus == NO_RUN){
+        if(runStatus != RUN_COMPLETELY && runStatus != STEP_TO_FINISH){
+            TickSpeed.process_entities = false;
             return;
         }
+        TickSpeed.process_entities = true;
         instance.tick(time, maxTicks, ticker);//tickscheduler mixins will handle run types, just need to know they are the ones currently being run
     }
 
     @Redirect(method = "tick", at=@At(value = "INVOKE",
             target = "Lnet/minecraft/world/tick/WorldTickScheduler;tick(JILjava/util/function/BiConsumer;)V",
             ordinal = 1))
-    public void preLiquidTicks(WorldTickScheduler<Block> instance, long time, int maxTicks, BiConsumer<BlockPos, Block> ticker){
-        TickProgress.update(LIQUID_TICKS, this.getRegistryKey());
-
-        int runStatus = TickProgress.runStatus();
-        if(runStatus == NO_RUN){
+    public void onLiquidTicks(WorldTickScheduler<Block> instance, long time, int maxTicks, BiConsumer<BlockPos, Block> ticker){
+        int runStatus = TickProgress.update(LIQUID_TICKS, this.getRegistryKey());
+        if(runStatus != RUN_COMPLETELY && runStatus != STEP_TO_FINISH){
+            TickSpeed.process_entities = false;
             return;
         }
+        TickSpeed.process_entities = true;
         instance.tick(time, maxTicks, ticker);//tickscheduler mixins will handle run types, just need to know they are the ones currently being run
     }
 }

@@ -12,7 +12,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import subtick.commands.SubTickCommands;
+import subtick.commands.NextCommand;
 
 import java.util.logging.Level;
 
@@ -49,7 +49,7 @@ public class SubTick implements CarpetExtension, ModInitializer
 
     @Override
     public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
-        SubTickCommands.register(dispatcher);
+        NextCommand.register(dispatcher);
     }
 
     @Override

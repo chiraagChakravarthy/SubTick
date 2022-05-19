@@ -26,24 +26,16 @@ public abstract class BlockEventsWorldMixin extends World implements StructureWo
         super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
     }
 
-    private boolean actuallyProcessEntities;
-
     @Inject(method="tick", at=@At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;processSyncedBlockEvents()V"))
     public void preBlockEvents(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        TickProgress.update(BLOCK_EVENTS, this.getRegistryKey());
-        int runStatus = TickProgress.runStatus();
-        actuallyProcessEntities = TickSpeed.process_entities;
-        TickSpeed.process_entities = runStatus != NO_RUN;
-    }
-
-    @Inject(method="tick", at=@At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;processSyncedBlockEvents()V", shift = At.Shift.AFTER))
-    public void postBlockEvents(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        TickSpeed.process_entities = actuallyProcessEntities;
+        int runStatus = TickProgress.update(BLOCK_EVENTS, this.getRegistryKey());
+        TickSpeed.process_entities = runStatus == RUN_COMPLETELY || runStatus == STEP_TO_FINISH;
     }
 
     @Inject(method = "processSyncedBlockEvents", at=@At("HEAD"), cancellable = true)
-    public void customProcessBlockEvents(CallbackInfo ci){
-        if(TickProgress.runStatus() == RUN_COMPLETELY){
+    public void onProcessBlockEvents(CallbackInfo ci){
+        int runStatus = TickProgress.runStatus();
+        if(runStatus == RUN_COMPLETELY || runStatus == STEP_TO_FINISH){
             return;
         }
         ci.cancel();
