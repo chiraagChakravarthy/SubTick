@@ -35,14 +35,12 @@ public abstract class MinecraftServerMixin
         if(TickSpeed.process_entities){
             Variables.setTargetPhase(World.END, Variables.POST_TICK, playerManager.getServer());
         }
-        Variables.inWorldTick = true;
     }
 
     @Inject(method = "tickWorlds", at=@At(
                 target = "Lnet/minecraft/server/MinecraftServer;getNetworkIo()Lnet/minecraft/server/ServerNetworkIo;",
                 value = "INVOKE"))
     public void postWorldsTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
-        Variables.inWorldTick = false;
         if(Variables.actuallyProcessEntities){
             Variables.setTargetPhase(World.OVERWORLD, Variables.TICK_FREEZE, playerManager.getServer());
             Variables.currentTickPhase = Variables.TICK_FREEZE;

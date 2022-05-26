@@ -52,6 +52,9 @@ public class Variables {
         worldVariables.put(World.END, new WorldData("End"));
         clientHighlights = new ArrayDeque<>();
         commandSource = null;
+
+        Variables.currentTickPhase = Variables.TICK_FREEZE;
+        Variables.currentDimension = World.OVERWORLD;
     }
 
     public static WorldData getData(RegistryKey<World> dimension){
@@ -163,5 +166,4 @@ public class Variables {
 
     public static int frozenTickCount = 0;
     public static int playStart = 0;
-    public static boolean inWorldTick = false;
 }
