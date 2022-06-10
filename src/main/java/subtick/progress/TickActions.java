@@ -1,6 +1,7 @@
 package subtick.progress;
 
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.world.ServerWorld;
 import subtick.Highlights;
 import subtick.commands.HighlightCommand;
 
@@ -11,6 +12,7 @@ public class TickActions {
     public static final int DEFAULT = 0;
 
     public static boolean ttSuccess = false;//previous tt was executed on the right block
+    public static ServerWorld tempWorld = null;
     public static int[] bedCount = new int[3];
 
     /*TODO

@@ -1,6 +1,8 @@
 package subtick.mixins;
 
 import carpet.utils.Messenger;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.world.tick.OrderedTick;
@@ -12,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import subtick.Highlights;
 import subtick.progress.TickActions;
 import subtick.progress.TickProgress;
 
@@ -66,11 +69,13 @@ public abstract class WorldTickSchedulerMixin<T> implements QueryableTickSchedul
                 }
 
                 this.tickedTicks.add(orderedTick);
-                if(!TickActions.ttSuccess){
+                ticker.accept(orderedTick.pos(), orderedTick.type());
+                if(TickActions.ttSuccess){
+                    Highlights.executedHighlight(orderedTick.pos(), TickActions.tempWorld);
+                } else {
                     i--;
                     total--;
                 }
-                ticker.accept(orderedTick.pos(), orderedTick.type());
             }
 
             if(TickActions.numActionsStep != 0 && !TickActions.stillPlaying()){

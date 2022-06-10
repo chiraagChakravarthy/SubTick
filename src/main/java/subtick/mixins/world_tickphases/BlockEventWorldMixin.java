@@ -3,10 +3,12 @@ package subtick.mixins.world_tickphases;
 import carpet.helpers.TickSpeed;
 import carpet.utils.Messenger;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import net.minecraft.block.Block;
 import net.minecraft.network.packet.s2c.play.BlockEventS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.BlockEvent;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.RegistryEntry;
@@ -52,6 +54,19 @@ public abstract class BlockEventWorldMixin extends World implements StructureWor
     public void preBlockEvents(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
         int runStatus = TickProgress.update(BLOCK_EVENTS, this.getRegistryKey());
         TickSpeed.process_entities = runStatus != NO_RUN;
+    }
+
+    int prevSize = 0;
+    @Inject(method = "addSyncedBlockEvent", at=@At("HEAD"))
+    public void startTrackBlockEvent(BlockPos pos, Block block, int type, int data, CallbackInfo ci){
+        prevSize = syncedBlockEventQueue.size();
+    }
+
+    @Inject(method = "addSyncedBlockEvent", at=@At("TAIL"))
+    public void endTrackBlockEvent(BlockPos pos, Block block, int type, int data, CallbackInfo ci){
+        if(syncedBlockEventQueue.size() > prevSize){
+            Highlights.newHighlight(pos, BLOCK_EVENTS, (ServerWorld) (Object) this);
+        }
     }
 
     private int bedCount = 0;
@@ -132,6 +147,11 @@ public abstract class BlockEventWorldMixin extends World implements StructureWor
                     if (this.processBlockEvent(blockEvent)) {
                         sendBlockEvent(blockEvent);
                     }
+
+                    if(!SubTickSettings.skipInvalidEvents || this.getBlockState(blockEvent.pos()).isOf(blockEvent.block())) {
+                        Highlights.executedHighlight(blockEvent.pos(), (ServerWorld) (Object) this);
+                    }
+
                 } else {
                     this.blockEventQueue.add(blockEvent);
                 }

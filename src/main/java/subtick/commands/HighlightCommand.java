@@ -4,12 +4,10 @@ import carpet.helpers.TickSpeed;
 import carpet.utils.Messenger;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import subtick.Highlights;
 import subtick.progress.TickProgress;
 
-import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
 
@@ -31,20 +29,20 @@ public class HighlightCommand {
     }
 
     private static int commandHighlight(CommandContext<ServerCommandSource> c, int type, int phase){
-        if(!TickSpeed.isPaused()){
-            Messenger.m(c.getSource(), "wi Must be in tick freeze to highlight");
-            return 0;
-        }
 
         if(type == Highlights.EXECUTED){
-            Messenger.m(c.getSource(), "gi Highlighting Executed Events");
-            Highlights.showExecuted(c.getSource().getWorld());
+            Highlights.toggleShowExecuted(c.getSource().getWorld());
+            Messenger.m(c.getSource(), "gi " + (Highlights.showingExecuted?"Executed events highlighted" : "Executed events no longer highlighted"));
         } else if(type == Highlights.NEW_EVENTS){
-            Messenger.m(c.getSource(), "gi Highlighting New Events");
-            Highlights.showNew(c.getSource().getWorld(), phase);
+            Highlights.toggleShowNew(c.getSource().getWorld(), phase);
+            if(phase==TickProgress.NUM_PHASES){
+                Messenger.m(c.getSource(), "gi " + (Highlights.showingNew[0]?"All New events highlighted": "All New events no longer highlighted"));
+            } else {
+                Messenger.m(c.getSource(), "gi New " + TickProgress.tickPhaseNamesPlural[phase] + (Highlights.showingNew[phase]?" highlighted":" no longer highlighted"));
+            }
         } else if(type==Highlights.NONE){
-            Messenger.m(c.getSource(), "gi Removing all highlights");
             Highlights.showNone(c.getSource().getWorld());
+            Messenger.m(c.getSource(), "gi All highlights cleared");
         }
         return 0;
     }

@@ -8,6 +8,7 @@
     "MinecraftServerMixin",
     "PistonBlockMixin",
     "ServerChunkManagerMixin",
+    "WorldAccessMixin",
     "WorldTickSchedulerMixin",
     "carpet.DataBuilderMixin",
     "world_tickphases.BlockEntityWorldMixin",

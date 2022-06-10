@@ -14,6 +14,7 @@ import net.minecraft.server.command.TestCommand;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import subtick.commands.BECommand;
+import subtick.commands.HighlightCommand;
 import subtick.commands.TTCommand;
 import subtick.commands.WhenCommand;
 import subtick.progress.TickActions;
@@ -42,10 +43,6 @@ public class SubTick implements CarpetExtension, ModInitializer
             }
         });
     }
-
-    public static void say(ServerWorld world, String msg){
-        world.getServer().getPlayerManager().broadcast(new LiteralText(msg), MessageType.CHAT, null);
-    }
     
     @Override
     public void onServerLoadedWorlds(MinecraftServer minecraftServer){
@@ -60,6 +57,7 @@ public class SubTick implements CarpetExtension, ModInitializer
         TTCommand.register(dispatcher);
         BECommand.register(dispatcher);
         WhenCommand.register(dispatcher);
+        HighlightCommand.register(dispatcher);
     }
 
     @Override

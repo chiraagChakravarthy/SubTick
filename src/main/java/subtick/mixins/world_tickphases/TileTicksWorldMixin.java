@@ -79,10 +79,12 @@ public abstract class TileTicksWorldMixin extends World implements StructureWorl
     @Inject(method="tickBlock", at=@At("HEAD"))
     public void verifyBlock(BlockPos pos, Block block, CallbackInfo ci){
         TickActions.ttSuccess = !SubTickSettings.skipInvalidEvents || this.getBlockState(pos).isOf(block);
+        TickActions.tempWorld = (ServerWorld) (Object) this;
     }
 
     @Inject(method="tickFluid", at=@At("HEAD"))
     public void verifyFluid(BlockPos pos, Fluid fluid, CallbackInfo ci){
         TickActions.ttSuccess = !SubTickSettings.skipInvalidEvents || this.getFluidState(pos).isOf(fluid);
+        TickActions.tempWorld = (ServerWorld) (Object) this;
     }
 }
