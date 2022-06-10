@@ -23,24 +23,19 @@ public class EntityListMixin {
 
     @Inject(method = "forEach", at=@At("HEAD"), cancellable = true)
     public void entityStep(Consumer<Entity> action, CallbackInfo ci){
-        if(entities.isEmpty()){
-            return;
-        }
-        if(entities.values().iterator().next().world.isClient){
+        if(entities.isEmpty() || entities.values().iterator().next().world.isClient){
+            iterating = null;
             return;
         }
 
         int runStatus = TickProgress.runStatus();
         if(runStatus==RUN_COMPLETELY || runStatus==NO_RUN){
+            iterating = null;
             return;
         }
         ci.cancel();
         if(runStatus==STEP_FROM_START){
-            if(iterating!=null){
-                throw new UnsupportedOperationException("Only one concurrent iteration supported");
-            } else {
-                this.iterating = entities;
-            }
+            this.iterating = entities;
         }
 
         //probably not possible for iterating to be null here

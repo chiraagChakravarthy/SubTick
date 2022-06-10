@@ -2,6 +2,7 @@ package subtick.mixins.world_tickphases;
 
 import carpet.helpers.TickSpeed;
 import net.minecraft.block.Block;
+import net.minecraft.fluid.Fluid;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
@@ -17,6 +18,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import subtick.SubTickSettings;
+import subtick.progress.TickActions;
 import subtick.progress.TickProgress;
 
 import java.util.function.BiConsumer;
@@ -71,5 +74,15 @@ public abstract class TileTicksWorldMixin extends World implements StructureWorl
         }
         instance.tick(time, maxTicks, ticker);//tickscheduler mixins will handle run types, just need to know they are the ones currently being run
         TickSpeed.process_entities = runStatus==RUN_COMPLETELY || runStatus==STEP_TO_FINISH;
+    }
+
+    @Inject(method="tickBlock", at=@At("HEAD"))
+    public void verifyBlock(BlockPos pos, Block block, CallbackInfo ci){
+        TickActions.ttSuccess = !SubTickSettings.skipInvalidEvents || this.getBlockState(pos).isOf(block);
+    }
+
+    @Inject(method="tickFluid", at=@At("HEAD"))
+    public void verifyFluid(BlockPos pos, Fluid fluid, CallbackInfo ci){
+        TickActions.ttSuccess = !SubTickSettings.skipInvalidEvents || this.getFluidState(pos).isOf(fluid);
     }
 }

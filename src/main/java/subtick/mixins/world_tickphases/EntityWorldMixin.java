@@ -12,6 +12,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Desc;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import subtick.progress.TickProgress;
@@ -34,7 +35,7 @@ public abstract class EntityWorldMixin extends World implements StructureWorldAc
         TickProgress.update(ENTITIES, this.getRegistryKey());
     }
 
-    @Inject(method="method_31420",
+    @Inject(method="method_31420(Lnet/minecraft/util/profiler/Profiler;Lnet/minecraft/entity/Entity;)V",
             at=@At(value = "INVOKE",
                     target = "Lnet/minecraft/server/world/ServerWorld;tickEntity(Ljava/util/function/Consumer;Lnet/minecraft/entity/Entity;)V"))
     public void preEntity(Profiler profiler, Entity entity, CallbackInfo ci){

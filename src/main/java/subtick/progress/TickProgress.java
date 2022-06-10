@@ -45,7 +45,8 @@ public class TickProgress {
     private static final RegistryKey<World>[] dimensions;
 
     public static final String[] dimensionNames = new String[]{"Overworld", "End", "Nether",};
-    public static final String[] tickPhaseNames = new String[]{"Tile Ticks", "Liquid Ticks", "Raids", "Block Events", "Entities", "Tile Entities"};
+    public static final String[] tickPhaseNamesPlural = new String[]{"Tile Ticks", "Liquid Ticks", "Raids", "Block Events", "Entities", "Tile Entities"};
+    public static final String[] tickPhaseNames = new String[]{"Tile Tick", "Liquid Tick", "Raid", "Block Event", "Entity", "Tile Entity"};
 
     static {
         dimensionCodes = new HashMap<>();
@@ -84,9 +85,13 @@ public class TickProgress {
     }
 
     public static String progressName(int progress){
+        return progressName(progress, true);
+    }
+
+    public static String progressName(int progress, boolean plural){
         return progress== PRE_TICK ?"Pre Tick":
                 progress== POST_TICK ?"Post Tick":
-                        (tickPhaseNames[getTickPhase(progress)] + " in the " + dimensionNames[getDimension(progress)/NUM_PHASES]);
+                        ((plural ? tickPhaseNamesPlural:tickPhaseNames)[getTickPhase(progress)] + " in the " + dimensionNames[getDimension(progress)/NUM_PHASES]);
     }
 
     public static void setTarget(int phase, int dimension){

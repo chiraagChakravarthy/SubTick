@@ -10,9 +10,14 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.command.TestCommand;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import subtick.commands.NextCommand;
+import subtick.commands.BECommand;
+import subtick.commands.TTCommand;
+import subtick.commands.WhenCommand;
+import subtick.progress.TickActions;
+import subtick.progress.TickProgress;
 
 import java.util.logging.Level;
 
@@ -44,12 +49,17 @@ public class SubTick implements CarpetExtension, ModInitializer
     
     @Override
     public void onServerLoadedWorlds(MinecraftServer minecraftServer){
+        TickProgress.reset();
+        TickActions.reset();
+        Highlights.reset();
         //A better way to check if carpetExtra is loaded
     }
 
     @Override
     public void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher) {
-        NextCommand.register(dispatcher);
+        TTCommand.register(dispatcher);
+        BECommand.register(dispatcher);
+        WhenCommand.register(dispatcher);
     }
 
     @Override

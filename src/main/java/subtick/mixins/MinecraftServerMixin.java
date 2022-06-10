@@ -9,6 +9,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import subtick.Highlights;
+import subtick.progress.TickActions;
 import subtick.progress.TickProgress;
 
 import java.util.function.BooleanSupplier;
@@ -31,8 +33,10 @@ public abstract class MinecraftServerMixin
     public void preWorldsTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
         actuallyProcessEntities = TickSpeed.process_entities;
         if(TickSpeed.process_entities){
+            Highlights.clearHighlights((MinecraftServer) (Object)this);
             TickProgress.setTarget(TickProgress.POST_TICK);
         }
+        TickActions.tick();
     }
 
     @Inject(method = "tickWorlds", at=@At(
@@ -47,5 +51,6 @@ public abstract class MinecraftServerMixin
             TickProgress.setCurrent(TickProgress.PRE_TICK);
             TickProgress.setTarget(TickProgress.PRE_TICK);
         }
+        TickActions.numActionsStep = 0;
     }
 }

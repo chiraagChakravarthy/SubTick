@@ -11,7 +11,7 @@
     "WorldTickSchedulerMixin",
     "carpet.DataBuilderMixin",
     "world_tickphases.BlockEntityWorldMixin",
-    "world_tickphases.BlockEventsWorldMixin",
+    "world_tickphases.BlockEventWorldMixin",
     "world_tickphases.EntityWorldMixin",
     "world_tickphases.RaidsWorldMixin",
     "world_tickphases.TileTicksWorldMixin"

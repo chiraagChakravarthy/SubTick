@@ -29,4 +29,6 @@ public abstract class BlockEntityWorldMixin extends World implements StructureWo
     public void preBlockEntities(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
         TickProgress.update(TickProgress.TILE_ENTITIES, this.getRegistryKey());
     }
+
+
 }
