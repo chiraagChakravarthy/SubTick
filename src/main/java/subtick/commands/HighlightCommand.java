@@ -6,6 +6,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.server.command.ServerCommandSource;
 import subtick.Highlights;
+import subtick.progress.TickActions;
 import subtick.progress.TickProgress;
 
 import static net.minecraft.server.command.CommandManager.literal;
@@ -29,7 +30,9 @@ public class HighlightCommand {
     }
 
     private static int commandHighlight(CommandContext<ServerCommandSource> c, int type, int phase){
-
+        if(TickActions.actor==null){
+            TickActions.actor = c.getSource();
+        }
         if(type == Highlights.EXECUTED){
             Highlights.toggleShowExecuted(c.getSource().getWorld());
             Messenger.m(c.getSource(), "gi " + (Highlights.showingExecuted?"Executed events highlighted" : "Executed events no longer highlighted"));
@@ -41,7 +44,7 @@ public class HighlightCommand {
                 Messenger.m(c.getSource(), "gi New " + TickProgress.tickPhaseNamesPlural[phase] + (Highlights.showingNew[phase]?" highlighted":" no longer highlighted"));
             }
         } else if(type==Highlights.NONE){
-            Highlights.showNone(c.getSource().getWorld());
+            Highlights.showNone(c.getSource().getServer());
             Messenger.m(c.getSource(), "gi All highlights cleared");
         }
         return 0;

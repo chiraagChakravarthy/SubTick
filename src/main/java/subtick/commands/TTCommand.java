@@ -4,6 +4,9 @@ import carpet.helpers.TickSpeed;
 import carpet.utils.Messenger;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.command.argument.BlockStateArgumentType;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.LiteralText;
@@ -12,6 +15,7 @@ import subtick.progress.TickProgress;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.getInteger;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
+import static net.minecraft.command.argument.BlockStateArgumentType.getBlockState;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 import static subtick.progress.TickProgress.NUM_PHASES;
@@ -20,13 +24,24 @@ public class TTCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher){
         dispatcher.register(literal("tt").then(
                 literal("step").executes(
-                        (c) -> commandStepTT(c, 1, 0)
+                        (c) -> commandStepTT(c, 1, 0, null)
                 ).then(
                         argument("num", integer(1)).executes(
-                                (c) -> commandStepTT(c, getInteger(c, "num"), 0)
+                                (c) -> commandStepTT(c, getInteger(c, "num"), 0, null)
                         ).then(
                                 argument("ticks", integer(0)).executes(
-                                        (c) -> commandStepTT(c, getInteger(c, "num"), getInteger(c, "ticks"))
+                                        (c) -> commandStepTT(c, getInteger(c, "num"), getInteger(c, "ticks"), null)
+                                )
+                        ).then(
+                                argument("block", BlockStateArgumentType.blockState()).executes(
+                                        (c) -> commandStepTT(c, getInteger(c, "num"), 0, getBlockState(c, "block").getBlockState())
+                                ).then(
+                                        argument("ticks", integer(0)).executes(
+                                                (c) -> commandStepTT(c,
+                                                        getInteger(c, "num"),
+                                                        getInteger(c, "ticks"),
+                                                        getBlockState(c, "block").getBlockState())
+                                        )
                                 )
                         )
                 )
@@ -41,14 +56,14 @@ public class TTCommand {
             Messenger.m(c.getSource(), "wi Must be stepping " + TickProgress.progressName(progress, true) + " to count");
             return 0;//TODO implement this entire system properly. Actually display what tile ticks are on what ticks
         }
-        Messenger.m(c.getSource(), "gi " + c.getSource().getWorld().getBlockTickScheduler().getTickCount() +
+        Messenger.m(c.getSource(), "gi " + c.getSource().getWorld().getBlockTickScheduler().tickableTicks.size() +
                 " Tile Ticks remaining");
         return 0;
     }
 
     private static final int tickPhase = TickProgress.TILE_TICKS;
 
-    private static int commandStepTT(CommandContext<ServerCommandSource> c, int num, int ticks){
+    private static int commandStepTT(CommandContext<ServerCommandSource> c, int num, int ticks, BlockState block){
         if(TickSpeed.process_entities){
             Messenger.m(c.getSource(), "wi Game is not frozen");
             return 0;
@@ -70,8 +85,13 @@ public class TTCommand {
             return 0;
         }
 
+        int action = 0;
+        if(block != null){
+            action = Block.getRawIdFromState(block.getBlock().getDefaultState());
+        }
+
         TickProgress.setTarget(progress);
-        TickActions.play(num, ticks, c.getSource());
+        TickActions.play(num, ticks, c.getSource(), action);
         return 0;
     }
 

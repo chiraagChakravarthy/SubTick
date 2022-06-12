@@ -6,7 +6,6 @@
     "BlockEntityTickerMixin",
     "EntityListMixin",
     "MinecraftServerMixin",
-    "PistonBlockMixin",
     "ServerChunkManagerMixin",
     "WorldAccessMixin",
     "WorldTickSchedulerMixin",

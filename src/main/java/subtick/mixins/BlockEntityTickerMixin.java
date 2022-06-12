@@ -23,7 +23,7 @@ public abstract class BlockEntityTickerMixin implements BlockEntityTickInvoker {
             value = "INVOKE",
             target = "Lnet/minecraft/block/entity/BlockEntityTicker;tick(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/entity/BlockEntity;)V"))
     public void preTileEntity(CallbackInfo ci){
-        if(blockEntity.getWorld() != null && blockEntity.getWorld().isClient){
+        if(blockEntity.getWorld() != null && blockEntity.getWorld().isClient && TickSpeed.isPaused()){
             return;
         }
         int runStatus = TickProgress.runStatus();

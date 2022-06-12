@@ -1,6 +1,8 @@
 package subtick.mixins;
 
 import carpet.utils.Messenger;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -15,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import subtick.Highlights;
+import subtick.SubTickSettings;
 import subtick.progress.TickActions;
 import subtick.progress.TickProgress;
 
@@ -54,6 +57,8 @@ public abstract class WorldTickSchedulerMixin<T> implements QueryableTickSchedul
             collectTickableTicks(time, maxTicks, this.profilerGetter.get());
         }
 
+        BlockPos prevPos = null;
+
         if(runStatus == STEP_FROM_START || runStatus == STEP){
             int total = 0;
             for (int i = 0; i < TickActions.numActionsStep; i++) {
@@ -70,12 +75,20 @@ public abstract class WorldTickSchedulerMixin<T> implements QueryableTickSchedul
 
                 this.tickedTicks.add(orderedTick);
                 ticker.accept(orderedTick.pos(), orderedTick.type());
-                if(TickActions.ttSuccess){
+                if(TickActions.ttSuccess && TickActions.inRange(orderedTick.pos())){
                     Highlights.executedHighlight(orderedTick.pos(), TickActions.tempWorld);
+                    System.out.println(Block.getRawIdFromState(((Block)orderedTick.type()).getDefaultState()));
+                    if(TickActions.action==0 || TickActions.action == Block.getRawIdFromState(((Block)orderedTick.type()).getDefaultState())){
+                        total--;
+                        prevPos = orderedTick.pos();
+                    } else {
+                        i--;
+                    }
                 } else {
                     i--;
                     total--;
                 }
+
             }
 
             if(TickActions.numActionsStep != 0 && !TickActions.stillPlaying()){
@@ -89,8 +102,11 @@ public abstract class WorldTickSchedulerMixin<T> implements QueryableTickSchedul
                 } else {
                     totalStepped = TickActions.numActionsPlay;
                 }
-                if(totalStepped != 0)
-                    Messenger.m(TickActions.actor, "wi Stepped " + totalStepped + " tile tick" + (totalStepped==1?"":"s"));
+                if((totalStepped==1 || TickActions.numActionsStep==1) && SubTickSettings.printEventCoords && prevPos != null){
+                    Messenger.m(TickActions.actor, "wi Stepped " + totalStepped + " tile tick" + (totalStepped == 1 ? "" : "s") + ": (" + prevPos.getX() + ", " + prevPos.getY() + ", " + prevPos.getZ() + ")");
+                } else if(totalStepped != 0) {
+                    Messenger.m(TickActions.actor, "wi Stepped " + totalStepped + " tile tick" + (totalStepped == 1 ? "" : "s"));
+                }
             }
         }
 

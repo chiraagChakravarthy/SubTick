@@ -2,7 +2,9 @@ package subtick.progress;
 
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.Vec3i;
 import subtick.Highlights;
+import subtick.SubTickSettings;
 import subtick.commands.HighlightCommand;
 
 import java.util.Arrays;
@@ -76,5 +78,14 @@ public class TickActions {
         actor = null;
         ticksPerStep = 0;
         Arrays.fill(bedCount, 0);
+    }
+
+    public static boolean inRange(Vec3i v){
+        if(actor==null){
+            return false;
+        }
+        double dx = v.getX()-actor.getPosition().getX(),
+                dz = v.getZ()-actor.getPosition().getZ();
+        return Math.sqrt(dx*dx+dz*dz)< SubTickSettings.maxEventRadius;
     }
 }

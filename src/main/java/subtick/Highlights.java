@@ -12,12 +12,14 @@ import net.minecraft.network.packet.s2c.play.TeamS2CPacket;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3i;
+import subtick.progress.TickActions;
 import subtick.progress.TickProgress;
 
 import java.util.*;
@@ -63,22 +65,28 @@ public class Highlights {
     }
 
     public static void executedHighlight(Vec3i pos, ServerWorld world){
-        executed.add(pos);
-        if(showingExecuted && TickSpeed.isPaused())
-            showHighlight(pos, EXECUTED, "", world);
+        if(executed.size() < 100) {
+            executed.add(pos);
+            if (showingExecuted && TickSpeed.isPaused())
+                showHighlight(pos, EXECUTED, "", world);
+        }
     }
 
     public static void newHighlight(Vec3i pos, int tickPhase, ServerWorld world){
-        newHighlights[tickPhase].add(pos);
-        if(showingNew[tickPhase] && TickSpeed.isPaused())
-            showHighlight(pos, NEW_EVENTS, "", world);
+        if(TickActions.inRange(pos)) {
+            if (newHighlights[tickPhase].size() < 50) {
+                newHighlights[tickPhase].add(pos);
+                if (showingNew[tickPhase] && TickSpeed.isPaused())
+                    showHighlight(pos, NEW_EVENTS, "", world);
+            }
+        }
     }
 
     public static void toggleShowExecuted(ServerWorld world){
         if(showingExecuted){
             showingExecuted = false;
             for (Vec3i pos : executed) {
-                hideHighlight(pos, world.getServer());
+                hideHighlight(pos, EXECUTED, world);
             }
         } else {
             showingExecuted = true;
@@ -117,7 +125,7 @@ public class Highlights {
                         Set<Vec3i> highlights = newHighlights[i];
 
                         for(Vec3i pos : highlights){
-                            hideHighlight(pos, world.getServer());
+                            hideHighlight(pos, NEW_EVENTS, world);
                         }
                     }
                 }
@@ -127,7 +135,7 @@ public class Highlights {
             if(showingNew[phase]){
                 showingNew[phase] = false;
                 for (Vec3i pos : newHighlights[phase]) {
-                    hideHighlight(pos, world.getServer());
+                    hideHighlight(pos, NEW_EVENTS, world);
                 }
             } else {
                 showingNew[phase] = true;
@@ -143,13 +151,13 @@ public class Highlights {
     public static void clearHighlights(MinecraftServer server){
         hideAllHighlights(server);
         executed.clear();
-        for(Set<Vec3i> list : newHighlights){
-            list.clear();
+        for (int i = 0; i < TickProgress.NUM_PHASES; i++) {
+            newHighlights[i].clear();
         }
     }
 
-    public static void showNone(ServerWorld world) {
-        hideAllHighlights(world.getServer());
+    public static void showNone(MinecraftServer server) {
+        hideAllHighlights(server);
         showingExecuted = false;
         Arrays.fill(showingNew, false);
     }
@@ -170,15 +178,16 @@ public class Highlights {
         server.getPlayerManager().sendToAll(destroyPacket);
     }
 
-    private static void hideHighlight(Vec3i pos, MinecraftServer server){
+    private static void hideHighlight(Vec3i pos, int type, ServerWorld world){
         if(!currentShowed.containsKey(pos)){
             return;
         }
 
+
         FallingBlockEntity highlight = currentShowed.get(pos);
         for(Team team : teams){
             if(team.getPlayerList().contains(highlight.getEntityName())){
-                server.getPlayerManager().sendToAll(TeamS2CPacket.changePlayerTeam(team, highlight.getEntityName(), TeamS2CPacket.Operation.REMOVE));
+                world.getServer().getPlayerManager().sendToAll(TeamS2CPacket.changePlayerTeam(team, highlight.getEntityName(), TeamS2CPacket.Operation.REMOVE));
                 break;
             }
         }
@@ -188,7 +197,15 @@ public class Highlights {
         ids.add(highlight.getId());
         currentShowed.remove(pos);
 
-        server.getPlayerManager().sendToAll(destroyPacket);
+        world.getServer().getPlayerManager().sendToAll(destroyPacket);
+
+        if(EXECUTED_AND_NEW.getPlayerList().contains(highlight.getEntityName())){
+            if(type==EXECUTED){
+                showHighlight(pos, NEW_EVENTS, "", world);
+            } else if(type==NEW_EVENTS){
+                showHighlight(pos, EXECUTED, "", world);
+            }
+        }
     }
 
     private static void showHighlight(Vec3i pos, int type, String name, ServerWorld world){
@@ -200,7 +217,7 @@ public class Highlights {
         if(currentShowed.containsKey(pos)){
             String otherName = currentShowed.get(pos).getEntityName();
             if((type==EXECUTED && teams[NEW_EVENTS].getPlayerList().contains(otherName)) || (type==NEW_EVENTS && teams[EXECUTED].getPlayerList().contains(otherName))){
-                hideHighlight(pos, world.getServer());
+                hideHighlight(pos, type, world);
                 team = EXECUTED_AND_NEW;
             } else {
                 return;

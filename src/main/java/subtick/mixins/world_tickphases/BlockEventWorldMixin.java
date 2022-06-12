@@ -70,6 +70,7 @@ public abstract class BlockEventWorldMixin extends World implements StructureWor
     }
 
     private int bedCount = 0;
+    private BlockPos prevBePos;
 
     @Inject(method = "processSyncedBlockEvents", at=@At("HEAD"), cancellable = true)
     public void onProcessBlockEvents(CallbackInfo ci){
@@ -103,8 +104,12 @@ public abstract class BlockEventWorldMixin extends World implements StructureWor
                 } else {
                     totalStepped = TickActions.numActionsPlay;
                 }
-                if(totalStepped != 0)
+
+                if(TickActions.action==0 && (totalStepped == 1 || TickActions.numActionsStep==1) && prevBePos != null){
+                    Messenger.m(TickActions.actor, "gi Stepped " + totalStepped +  "block event" + (totalStepped==1?"":"s") + " (" + prevBePos.getX() + ", " + prevBePos.getY() + ", " + prevBePos.getZ() + ")");
+                } else if(totalStepped != 0){
                     Messenger.m(TickActions.actor, "gi Stepped " + totalStepped + " block event" + (TickActions.action==1 ?" delay" : (totalStepped==1?"":"s")));
+                }
             }
             TickActions.bedCount[TickProgress.dim(getRegistryKey())/NUM_PHASES] = bedCount;
         }
@@ -144,12 +149,14 @@ public abstract class BlockEventWorldMixin extends World implements StructureWor
                 BlockEvent blockEvent = this.syncedBlockEventQueue.removeFirst();
 
                 if(this.shouldTickBlocksInChunk(ChunkPos.toLong(blockEvent.pos()))){
+
                     if (this.processBlockEvent(blockEvent)) {
                         sendBlockEvent(blockEvent);
                     }
 
-                    if(!SubTickSettings.skipInvalidEvents || this.getBlockState(blockEvent.pos()).isOf(blockEvent.block())) {
+                    if((!SubTickSettings.skipInvalidEvents || this.getBlockState(blockEvent.pos()).isOf(blockEvent.block())) && TickActions.inRange(blockEvent.pos())) {
                         Highlights.executedHighlight(blockEvent.pos(), (ServerWorld) (Object) this);
+                        prevBePos = blockEvent.pos();
                     }
 
                 } else {
@@ -176,6 +183,7 @@ public abstract class BlockEventWorldMixin extends World implements StructureWor
                 if(!SubTickSettings.skipInvalidEvents || this.getBlockState(blockEvent.pos()).isOf(blockEvent.block())){
                     total++;
                     Highlights.executedHighlight(blockEvent.pos(), (ServerWorld)(Object)this);
+                    prevBePos = blockEvent.pos();
                     if (this.processBlockEvent(blockEvent)) {
                         sendBlockEvent(blockEvent);
                     }
